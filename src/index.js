@@ -1,12 +1,16 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
+import '../src/components/Mystyle.css'
 import App from './App';
 import reportWebVitals from './reportWebVitals';
+import { ProSidebarProvider } from 'react-pro-sidebar';
 
 ReactDOM.render(
   <React.StrictMode>
-    <App />
+    <ProSidebarProvider>
+      <App />
+    </ProSidebarProvider>
   </React.StrictMode>,
   document.getElementById('root')
 );

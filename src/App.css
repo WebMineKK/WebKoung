@@ -36,3 +36,12 @@
     transform: rotate(360deg);
   }
 }
+
+
+.css-6j8wv5-Input:focus{
+  text-decoration: none !important;
+  border: 1px solid red !important;
+  font-weight: 700 !important;
+  outline: solid 1px red !important;
+  box-sizing: content-box !important;
+}
