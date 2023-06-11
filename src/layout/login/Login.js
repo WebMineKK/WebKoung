@@ -11,6 +11,7 @@ export default function Example() {
      const [passwordState, setPasswordState] = useState("");
      const [validateUser, setValidateUser] = useState(false);
      const [validatePwd, setValidatePwd] = useState(false);
+     const [loading, setLoading] = useState(false)
 
      const _handleUserName = (e) => {
           setUsernameState(e.target.value);
@@ -20,6 +21,8 @@ export default function Example() {
      }
 
      const _handleLogin = () => {
+
+
           if (usernameState === '') {
                setValidateUser(true)
           } else {
@@ -30,13 +33,23 @@ export default function Example() {
           } else {
                setValidatePwd(false)
           }
+
+          setLoading(true)
           NewAxios.post('login', {
                "username": usernameState,
                "password": passwordState
           }).then((res) => {
                if (res?.status === 200) {
-                    localStorage.setItem(USER_KEY, JSON.stringify(res?.data));
-                    history.push('/home');
+
+                    setTimeout(() => {
+
+                         localStorage.setItem(USER_KEY, JSON.stringify(res?.data));
+                         history.push('/home');
+
+                         setLoading(false)
+                    }, 300)
+
+
                } else {
                     // history.push('/login')
                }
@@ -129,7 +142,11 @@ export default function Example() {
                                         <span className="absolute inset-y-0 left-0 flex items-center pl-3">
                                              <LockClosedIcon className="h-5 w-5 text-indigo-500 group-hover:text-indigo-400" aria-hidden="true" />
                                         </span>
-                                        ເຂົ້າສູ່ລະບົບ
+
+                                        {
+                                             loading ? <span>Loading...</span>
+                                                  : <span>ເຂົ້າສູ່ລະບົບ</span>
+                                        }
                                    </button>
                               </div>
                          </div>

@@ -2,31 +2,35 @@ import React, { useEffect, useState } from 'react'
 import { useHistory } from 'react-router-dom';
 import Myaxios from '../../components/chart/Myaxios';
 import moment from 'moment';
+import { NewAxios } from '../../components/MyAxios';
+import { USER_KEY } from '../../components/userKey'
 
 export default function ImportPage() {
 
-  const [dataInconmeStock, setDataInconmeStock] = useState([]);
-  const [loading, setloading] = useState(true);
+  const [dataTable, setDataTable] = useState([])
+
+  const [loading, setloading] = useState(false);
+  const userToken = JSON.parse(localStorage.getItem(USER_KEY));
 
   const history = useHistory();
 
-
-  const table = [
-    { date: '30-08-2022 15:00', carNum: 'ຈຂ 8889', bill: '202212351', totalProduct: '1500', amount: 25000000, discount: '0.00', totalMoney: 25000000 },
-    { date: '10-08-2022 17:00', carNum: 'ອອ 5566', bill: '202235112', totalProduct: '880', amount: 65000000, discount: '0.00', totalMoney: 65000000 },
-    { date: '05-08-2022 19:52', carNum: 'ຈຂ 7770', bill: '202280765', totalProduct: '750', amount: 15000000, discount: '0.00', totalMoney: 15000000 },
-  ]
-
   const LoadData = () => {
     setloading(true)
-    Myaxios.get('IncomeStock/QueryAll')
-      .then((res) => {
-        if (res.status === 200) {
-          setDataInconmeStock(res.data)
-          setloading(false)
-          // console.log(res.data? )
-        }
-      })
+
+    NewAxios.post('get_import', {
+      page: 1,
+      limit: 100
+    }, {
+      headers: {
+        'Authorization': `Bearer ${userToken?.token}`
+      },
+    }).then((res) => {
+      if (res.status === 200) {
+        setDataTable(res?.data?.data)
+        // console.log(res?.data?.data)
+        setloading(false)
+      }
+    })
   }
 
   useEffect(() => {
@@ -38,7 +42,6 @@ export default function ImportPage() {
 
       <div>
         <h3 className="text-lg leading-6 font-bold text-gray-900">ນຳສິນຄ້າເຂົ້າໃຫມ່</h3>
-        <p className="mt-1 max-w-2xl text-sm text-gray-500">ປ້ອນຂໍ້ມູນໃນຊ່ອງວ່າງ</p>
       </div>
 
 
@@ -69,7 +72,7 @@ export default function ImportPage() {
             </div>
           </div>
           <div class="w-full flex justify-end">
-            <button type="submit" class="inline-flex w-36 justify-center rounded-md border border-transparent bg-indigo-500 py-2 px-4 text-base text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 font-bold "
+            <button class="inline-flex w-36 justify-center rounded-md border border-transparent bg-indigo-500 py-2 px-4 text-base text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 "
               onClick={() => history.push('/home/import/manage')}>
               ນຳສິນຄ້າເຂົ້າໃໝ່
             </button>
@@ -80,9 +83,9 @@ export default function ImportPage() {
 
         <h4 class="text-lg font-bold leading-6 text-gray-900 mb-5">ລາຍການລ່າສຸດ</h4>
         <div class="overflow-x-auto relative ">
-          <table class="w-full text-sm text-left text-gray-700">
+          <table class="my-table-im w-full text-sm text-left text-gray-700">
             <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
-              <tr className='my-table'>
+              <tr>
                 <th scope="col" class="px-3 py-3 border text-center">
                   #
                 </th>
@@ -90,55 +93,50 @@ export default function ImportPage() {
                   ວັນທີ ແລະ ເວລາ
                 </th>
                 <th scope="col" class="px-3 py-3 border">
-                  ໝາຍເລກລົດຂົ່ນສົ່ງ
-                </th>
-                <th scope="col" class="px-3 py-3 border">
                   ເລກທີໃບບິນ
                 </th>
                 <th scope="col" class="px-3 py-3 border">
-                  ລວມລາຍການ
+                  ຮູບໃບບີນ
                 </th>
                 <th scope="col" class="px-3 py-3 border">
-                  ຈຳນວນເງີນ
+                  ຂົນສົ່ງໂດຍບໍລິສັດ
                 </th>
                 <th scope="col" class="px-3 py-3 border">
-                  ສ່ວນຫລຸດ
+                  ໝາຍເລກລົດຂົ່ນສົ່ງ
                 </th>
                 <th scope="col" class="px-3 py-3 border">
-                  ລວມເປັນເງີນ
+                  ລວມມູນຄ່າທັງໝົດ
                 </th>
               </tr>
             </thead>
             <tbody>
               {
-                dataInconmeStock?.map((x, idx) => {
+                dataTable?.map((x, idx) => {
                   return (
-                    <tr key={idx} class="bg-white border-b">
-                      <td align='center' scope="row" class="py-4 px-2 font-medium  whitespace-nowrap ">
-                        <a href="#" class="font-medium text-blue-600 dark:text-blue-500 hover:underline">
-                          ເບິ່ງຂໍ້ມູນ
-                        </a>
+                    <tr key={idx} class="border-solid border-b border-[#ddd] hover:bg-gray-50">
+                      <td width={50} align='center' class="px-2 font-medium  whitespace-nowrap ">
+                        {idx + 1}
                       </td>
-                      <td class="pl-3 w-38">
-                        {moment(x.income_date).format("DD-MM-YYYY")}
+                      <td width={150} class="px-3">
+                        {moment(x.im_date).format("DD-MM-YYYY")}
                       </td>
-                      <td class="pl-3 w-36">
-                        {x.vehicle_regis}
+                      <td width={100} class="px-3">
+                        {x.im_bill_no}
                       </td>
-                      <td class="pl-3 w-28">
-                        {x.income_id}
+                      <td width={80} class="pl-3">
+                        <div className='align-bottom'>
+                          <img src={x.im_image} alt='' className='w-10 object-fill h-8 rounded-sm' />
+                        </div>
                       </td>
-                      <td class="pl-3 w-28">
-                        {x.total_product}
+                      <td width={220} class="px-3">
+                        {x.im_company_name}
                       </td>
-                      <td class="pl-3 px-6">
-                        {x.amount}
+                      <td width={140} class="px-3">
+                        {x.im_regis}
                       </td>
-                      <td class="pl-3 px-6">
-                        {x.discount}
-                      </td>
-                      <td class="py-4 px-6">
-                        {(x.total).toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                      <td width={130} class="px-3 text-right">
+                        {x.im_total?.toLocaleString()}
+                        <span> ກີບ</span>
                       </td>
                     </tr>
                   )

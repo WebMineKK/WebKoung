@@ -1,35 +1,146 @@
-import React from 'react'
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import OtherSelect from 'react-select'
-import { useState } from 'react'
-import { useHistory } from 'react-router-dom'
+import { useHistory, useLocation } from 'react-router-dom'
+import { NewAxios } from "../../components/MyAxios";
+import { USER_KEY } from '../../components/userKey'
+import { toast } from "react-toastify";
 
 export default function AddPreorder() {
+     const selectInputRef = useRef();
+     const lo = useLocation()
+
+
+     const userToken = JSON.parse(localStorage.getItem(USER_KEY));
 
      const history = useHistory()
+     const [loading, setloading] = useState(true);
+     const [customerData, setCustomerData] = useState([])
+     const [productData, setProductData] = useState([])
+
+     const [userID, setUserID] = useState(userToken.detail['u_id'])
+
+     const date = new Date();
+     const futureDate = date.getDate();
+     date.setDate(futureDate);
+     const defaultValue = date.toLocaleDateString('en-CA');
+
+     const [ResultTotal, setResultTotal] = useState('0')
+     const [NewTotal, setNewTotal] = useState('0')
+
+     const [getUID, setGetUID] = useState({})
+     const [clear, setclear] = useState(false);
+
+     const [index, setindex] = useState([])
+
+     const [disLabel, setDisLabel] = useState(0)
+
+
+     const LoadData = () => {
+          setloading(true)
+
+          NewAxios.get('product', {
+               headers: {
+                    'Authorization': `Bearer ${userToken?.token}`
+               },
+          }).then((res) => {
+               if (res.status === 200) {
+                    let abc = res.data.data
+                    let update = abc.map((x) => ({
+                         value: x.pro_id,
+                         label: x.pro_name,
+                         price: x.pro_price,
+                         unit: x.pro_unit,
+                         status: false
+                    }))
+
+                    setProductData(update)
+
+               }
+          })
+
+          NewAxios.get('customer', {
+               headers: {
+                    'Authorization': `Bearer ${userToken?.token}`
+               },
+          }).then((res) => {
+               if (res.status === 200) {
+                    setCustomerData(res?.data)
+                    // console.log(res.data)
+               }
+          })
+
+          NewAxios.post('order', {
+               page: 1,
+               limit: 10
+          }, {
+               headers: {
+                    'Authorization': `Bearer ${userToken?.token}`
+               },
+          }).then((res) => {
+               if (res.status === 200) {
+                    setGetUID(res.data.data.slice(0)[0])
+                    console.log(res.data.data.slice(0)[0])
+               }
+          })
+          setloading(false)
+
+     }
+
+     useEffect(() => {
+          LoadData()
+     }, [])
+
+     useEffect(() => {
+          let info = lo.state?.dataPre?.order_detail
+          // console.log(info)
+
+          if (info?.length > 0) {
+               let arr = []
+               info.forEach(val => {
+                    // console.log(val)
+                    let inserItem = productData.map((x) => {
+                         if (x.value === val.pro_id) {
+                              console.log(x.value)
+                              x.label = x.label
+                              x.price = x.price
+                              x.unit = x.unit
+                              x.value = x.value
+                              x.status = true
+                              x.qty = ''
+                              x.total = ''
+
+                              console.log(x)
+                              return x
+                         }
+                         arr.push(x)
+
+                    })
+               });
+               setindex(arr)
+
+               // console.log(arr)
+          }
+     }, [lo.state?.dataPre?.order_detail, productData])
+
+
+     const customerOption = customerData?.data?.map((x) => ({
+          value: x.cus_id,
+          label: x.cus_name
+     }))
 
      const [modelItem, setmodelItem] = useState({
           itemid: '',
           itemname: '',
           qty: '',
-          price_in: '',
-          discount: '',
+          price: '',
+          total: '',
+          discout: 0
      })
 
-     const options = [
-          { value: 'KOU0001', label: 'ເບຍຄາວສະເບີກ 330ml ລັງຢາງ' },
-          { value: 'KOU0002', label: 'ເບຍຄາວສະເບີກ 330ml ແກັດເຈ້ຍ' },
-     ]
-
-     const options_cus = [
-          { value: '1', label: 'ສົມສັກ' },
-          { value: '2', label: 'ສົມຊາຍ' },
-          { value: '3', label: 'ສົມປອງ' },
-     ]
-
      const [getID, setgetID] = useState([])
-     function getvalueDrugs(e) {
-          setgetID(e)
-          // console.log(e);
+     function getvalueProduct(e) {
+          setgetID(e.value)
+          console.log(e.value);
      }
 
      const [getcus, setgetcus] = useState([])
@@ -38,29 +149,153 @@ export default function AddPreorder() {
           // console.log(e);
      }
 
-     const [index, setindex] = useState([])
-     const addItem = () => {
-          let inserItem = {
-               itemid: getID.value,
-               itemname: getID.label,
-               qty: modelItem.qty,
+     const onClear = () => {
+          selectInputRef.current.select.clearValue();
+     };
+
+
+     const addItem = (e) => {
+          let inserItem = productData.map((x) => {
+               if (x.value === e.value) {
+                    x.label = x.label
+                    x.price = x.price
+                    x.unit = x.unit
+                    x.value = x.value
+                    x.status = true
+                    x.qty = ''
+                    x.total = ''
+               }
+               return x
+
+
+          })
+          setindex(inserItem)
+          // console.log(inserItem)
+
+
+          // let newData = productData.filter((x) => x.status === false)
+
+          // console.log(newData)
+          // setProductData(newData)
+
+     }
+
+     const Calculate = (qty, id, unit, price, idx) => {
+          let sl
+          if (qty >= parseInt(unit)) {
+               sl = unit
+          }
+          else {
+               sl = qty
           }
 
-          setindex([...index, inserItem])
+          let update = index.map((row, i) => {
+               // console.log(row)
+               if (idx === i) {
+                    row.qty = parseInt(sl)
+                    row.total = sl * price
+               }
+               return row
 
-          setmodelItem({
-               itemid: '',
-               itemname: '',
-               qty: '',
-               price_in: '',
-               discount: '',
+          })
+          setindex(update)
+
+          let data = update.filter((x) => x.status === true)
+          let test = data.map((x) => {
+               return x.total
+          })
+
+          var sum = test.reduce(function (prev, current) {
+               return prev + +current
+          }, 0)
+
+          setResultTotal(sum)
+
+          // console.log(sum)
+
+     }
+
+
+     const TotalPrice = (discout) => {
+
+          let newResult = (ResultTotal * discout) / 100
+          setDisLabel(newResult)
+
+          setNewTotal(parseInt(newResult) + ResultTotal)
+     }
+
+     const removeItem = (e) => {
+          const findID = index.filter((x) => x.value === e)
+          let update_show = index.map(row => {
+               if (row.value === e) {
+                    row.status = false
+               }
+               return row
+          })
+          setindex(update_show)
+
+          var sum = findID.reduce(function (prev, current) {
+               return prev - -current.total
+          }, 0)
+
+          setResultTotal(sum)
+
+          // setindex(arr)
+
+     }
+
+     // console.log(getUID['o_id'])
+
+     const SaveProduct = () => {
+
+          let dataIndex = []
+          let select_data = index.filter(x => x.status === true)
+
+          let Demo = select_data.map((x) => {
+               let data = {
+                    pro_id: x.value,
+                    pro_unit: x.qty,
+                    pro_price: x.price
+               }
+
+               dataIndex.push(data)
+          })
+          // console.log(dataIndex)
+
+          NewAxios.post('create_order', {
+               cus_id: getcus.value,
+               u_id: userID,
+               discount: parseInt(modelItem.discout),
+               order_detail:
+                    dataIndex
+
+          }, {
+               headers: {
+                    'Authorization': `Bearer ${userToken?.token}`
+               },
+          }).then(res => {
+               if (res.status === 200) {
+
+                    toast.success("ເພີ່ມຂໍ້ມູນໃຫມ່ສຳເລັດ", {
+                         position: toast.POSITION.BOTTOM_LEFT,
+                    });
+
+                    LoadData()
+                    history.push({ pathname: '/home/preorder/bill', state: { dataPre: getUID } })
+
+               } else {
+                    toast.error("ບໍ່ສຳເລັດປ້ອນຂໍ້ມູນບໍ່ຖືກຕ້ອງ!", {
+                         position: toast.POSITION.BOTTOM_LEFT,
+                    });
+               }
           })
      }
-     console.log(index)
+
+
 
      return (
           <>
-               <div className='bg-white  h-auto pb-10 shadow sm:rounded-lg'>
+               <div className="bg-white  h-auto pb-10 shadow sm:rounded-lg mb-5">
                     <div className="px-4 py-5 sm:px-6">
                          <div className='flex'>
                               <h3 className="text-lg leading-6 font-bold text-gray-900">ການສັ່ງຂາຍໃໝ່</h3>
@@ -74,31 +309,41 @@ export default function AddPreorder() {
 
                     <div className='px-4 py-5 sm:px-6 bg-gray-100 border-b'>
                          <div class="flex">
-                              <label for="small-input" class="w-36 block pt-1.5 mb-2 text-sx font-medium text-gray-900 dark:text-gray-300">ເລືອກລູກຄ້າ</label>
+                              <label for="small-input" class="w-36 block pt-1.5 mb-2 text-sx font-medium text-gray-900">ເລືອກລູກຄ້າ</label>
                               <div className='w-5/12'>
                                    <OtherSelect
+                                        styles={{
+                                             control: (base, state) => ({
+                                                  ...base,
+                                                  "*": {
+                                                       boxShadow: "none !important",
+                                                  },
+                                             }),
+                                        }}
                                         onChange={(e) => getvaluecus(e)}
-                                        options={options_cus} isClearable />
+                                        options={customerOption} isClearable />
                               </div>
                          </div>
                     </div>
 
                     <div className='px-4 py-5 sm:px-6'>
                          <div class="flex">
-                              <label for="small-input" class="w-36 block pt-1.5 mb-2 text-sx font-medium text-gray-900 dark:text-gray-300">ເລກລະຫັດສັ່ງ</label>
+                              <label class="w-36 block pt-1.5 mb-2 text-sx font-medium text-gray-900 ">ເລກລະຫັດສັ່ງ INV-</label>
                               <div className='w-48'>
-                                   <input type="text" placeholder='SO-00001' id="default-input" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" />
+                                   <input type="number" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+                                        value={getUID['o_id'] + 1} />
                               </div>
                          </div>
                          <div class="flex mt-3">
-                              <label for="small-input" class="w-36 block pt-1.5 mb-2 text-sx font-medium text-gray-900 dark:text-gray-300">ວັນທີສັ່ງ</label>
+                              <label class="w-36 block pt-1.5 mb-2 text-sx font-medium text-gray-900 ">ວັນທີສັ່ງ</label>
                               <div className='w-48'>
-                                   <input type="date" id="default-input" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" />
+                                   <input type="date" defaultValue={defaultValue} class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" />
                               </div>
                          </div>
                     </div>
+               </div>
 
-
+               <div className='bg-white  h-auto pb-10 shadow sm:rounded-lg'>
                     <div className='py-5 sm:px-6 '>
                          <div className='border-t border-gray-200 pt-4 px-5 w-full'></div>
                          <div className='w-full flex justify-between'>
@@ -106,33 +351,42 @@ export default function AddPreorder() {
                                    <div className='w-3/4'>
                                         <div class="pr-5 pt-1.5 pb-1">ລາຍການສິນຄ້າ:</div>
                                         <OtherSelect
-                                             onChange={(e) => getvalueDrugs(e)}
-                                             options={options} isClearable />
+                                             styles={{
+                                                  control: (base, state) => ({
+                                                       ...base,
+                                                       "*": {
+                                                            boxShadow: "none !important",
+                                                       },
+                                                  }),
+                                             }}
+                                             onChange={(e) => addItem(e) || onClear(e)}
+                                             options={productData}
+                                        />
+
+
                                    </div>
-                                   <div className='w-1/6 ml-5'>
-                                        <div class="pr-5 pt-1.5 pb-1">ຈຳນວນ</div>
+                                   <div>
+                                        <div class="pr-5 pt-1.5 pb-1">ບາໂຄ໊ດ</div>
                                         <input
-                                             className=" p-1.6 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md text-gray-900"
-                                             id="inline-full-name" type="number" value={modelItem.qty}
-                                             onChange={(e) => setmodelItem({ ...modelItem, qty: e.target.value })} />
+                                             className="border p-1.5 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md text-gray-900"
+                                        />
                                    </div>
                               </div>
 
                               <div className='w-1/3  block pt-8'>
                                    <div className='block text-right'>
-                                        <button type="button"
-                                             onClick={addItem}
-                                             class="w-32 text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-bold rounded-lg text-sm px-5 py-2.5 mr-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800">ເພີ່ມຂໍ້ມູນ</button>
-                                        {/* <button type="button" class="w-32 py-2.5 px-5 mr-2 mb-2 text-sm font-bold text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-400 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">ຍົກເລີກ</button> */}
+                                        <button
+                                             onClick={SaveProduct}
+                                             class="w-32 text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-bold rounded-lg text-sm px-5 py-2.5 mr-2 mb-2 ">
+                                             ບັນທືກຂໍ້ມູນ</button>
                                    </div>
-
                               </div>
                          </div>
                     </div>
 
-                    <div class="relative sm:rounded-lg px-4 py-5 sm:px-6">
+                    <div class="relative sm:rounded-lg px-4 py-5 sm:px-6 overflow-y-auto">
                          <table class="w-full text-base text-left text-gray-700">
-                              <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                              <thead class="text-xs text-gray-700 uppercase bg-gray-50 ">
                                    <tr className='my-table '>
                                         <th scope="col" class="w-12 text-center border ">
                                              #
@@ -140,16 +394,13 @@ export default function AddPreorder() {
                                         <th scope="col" class="px-3 w-5/12 border ">
                                              <span className='text-base'>ຊື່ສິນຄ້າ</span>
                                         </th>
-                                        <th scope="col" class="px-3 w-24 border">
-                                             <span className='text-base'>ຈຳນວນ</span>
+                                        <th scope="col" class="px-3 w-36 border">
+                                             <span className='text-base'>ຈຳນວນ | ມີຈຳໜ່າຍ</span>
                                         </th>
                                         <th scope="col" class="px-3 w-28 border">
                                              <span className='text-base'>ລາຄາ</span>
                                         </th>
-                                        <th scope="col" class="px-3 w-24 border">
-                                             <span className='text-base'>ສ່ວນຫລຸດ</span>
-                                        </th>
-                                        <th scope="col" class="px-3 py-3 border">
+                                        <th scope="col" class="px-3 py-1.5 border">
                                              <span className='text-base'>ລວມ</span>
                                         </th>
                                    </tr>
@@ -157,36 +408,56 @@ export default function AddPreorder() {
                               <tbody>
                                    {
                                         index?.map((row, idx) => {
-                                             return (
-                                                  <tr
-                                                       key={idx}
-                                                       class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
-                                                       <td width={50} class="px-3 text-base py-4 text-center text-gray-900">
-                                                            {idx + 1}
-                                                       </td>
-                                                       <th scope="row" class="px-3 text-base py-4 font-medium text-gray-900 dark:text-white whitespace-nowrap">
-                                                            {row.itemname}
-                                                       </th>
-                                                       <td width={130} class="px-3 py-4">
-                                                            <label for="small-input" class="block pt-1.5 mb-2 text-base font-medium text-gray-900 dark:text-gray-300">0.00</label>
-                                                       </td>
-                                                       <td width={160} class="px-3 py-4">
-                                                            <label for="small-input" class="block pt-1.5 mb-2 text-base font-medium text-gray-900 dark:text-gray-300">0.00</label>
-                                                       </td>
-                                                       <td width={130} class="px-3 py-4">
-                                                            <input
-                                                                 className="border p-1.5 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-base border-gray-300 rounded-md text-gray-900"
-                                                                 id="inline-full-name" type="number" value='0.00' />
-                                                       </td>
-                                                       <td width={130} class="px-3 py-4">
-                                                            <label for="small-input" class="w-36 text-right block pt-1.5 mb-2 text-base font-medium text-gray-900 dark:text-gray-300">0.00</label>
-                                                       </td>
+                                             // console.log(row)
 
-                                                       <td width={80} class="px-3 py-4 text-center">
-                                                            <a href="#" class="font-medium text-blue-600 dark:text-blue-500 hover:underline">ລົບ</a>
-                                                       </td>
-                                                  </tr>
-                                             )
+                                             if (row.status === true) {
+
+                                                  return (
+                                                       <tr
+                                                            key={idx}
+                                                            class="bg-white border-solid border-b border-[#ddd] hover:bg-gray-50">
+                                                            <td width={50} class="px-3 text-base text-center text-gray-900">
+                                                                 {/* {console.log(row.length)} */}
+                                                            </td>
+                                                            <th scope="row" class="px-3 text-base font-medium text-gray-900  whitespace-nowrap">
+                                                                 <span className="text-[#777] pr-1">
+                                                                      {row.value}
+                                                                 </span>
+                                                                 {row.label}
+                                                            </th>
+                                                            <td width={150} class="px-3 flex">
+                                                                 <input
+                                                                      className="border p-1.5 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md text-gray-900"
+                                                                      id="inline-full-name" type="number"
+                                                                      value={row.qty}
+                                                                      onChange={(e) => {
+                                                                           Calculate(e.target.value, row.value, row.unit, row.price, idx)
+                                                                      }}
+                                                                 />
+                                                                 <p className="text-[#777] pl-2 pt-1.5">
+                                                                      {row.unit}
+                                                                 </p>
+                                                            </td>
+                                                            <td width={160} class="px-3">
+                                                                 <label class="w-36 text-right block pt-1.5 mb-2 text-sm font-medium text-gray-900 ">
+                                                                      {row.price?.toLocaleString()}
+                                                                 </label>
+                                                            </td>
+                                                            <td width={130} class="px-3">
+                                                                 <label class="w-36 text-right block pt-1.5 mb-2 text-sm font-medium text-gray-900 ">
+                                                                      {row.total?.toLocaleString()}
+                                                                 </label>
+                                                            </td>
+                                                            <td width={80} class="px-3 py-2 text-center">
+                                                                 <button
+                                                                      onClick={() => removeItem(row.value)}
+                                                                      className='relative flex px-3 py-[4px] text-[#2D3436] rounded-md ml-3 border-[#ddd] border border-solid'>
+                                                                      ລືບ
+                                                                 </button>
+                                                            </td>
+                                                       </tr>
+                                                  )
+                                             }
                                         })
                                    }
 
@@ -197,23 +468,35 @@ export default function AddPreorder() {
                     <div class="grid grid-cols-2 gap-4 px-5 mt-10">
                          <div className='w-full relative '>
                               <div className='w-full absolute bottom-0'>
-                                   <label for="small-input" class="w-36 pt-1.5 block mb-2 text-sx font-medium text-gray-900 dark:text-gray-300">ໂນ໊ດຂໍ້ຄວາມ</label>
-                                   <textarea id="message" rows="3" class="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Your message..."></textarea>
+                                   <label for="small-input" class="w-36 pt-1.5 block mb-2 text-sx font-medium text-gray-900 ">ໂນ໊ດຂໍ້ຄວາມ</label>
+                                   <textarea id="message" rows="3" class="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 " placeholder="Your message..."></textarea>
                               </div>
                          </div>
                          <div className='w-full bg-gray-100 h-36 rounded-lg'>
                               <div className='py-3 px-5'>
                                    <div className='flex'>
-                                        <label for="small-input" class="w-64 block pt-1.5 mb-2 text-sx text-gray-500 dark:text-gray-300">ລວມເປັນເງີນ</label>
-                                        <label for="small-input" class="w-full text-right block pt-1.5 mb-2 text-base text-gray-500 dark:text-gray-300">0</label>
+                                        <label for="small-input" class="w-64 block pt-1.5 mb-2 text-sx text-[#2D3436] ">ລວມເປັນເງີນ:</label>
+                                        <label for="small-input" class="w-full text-right block pt-1.5 mb-2 text-base text-[#2D3436] ">{ResultTotal?.toLocaleString()}</label>
+                                   </div>
+                                   <div className='flex justify-between items-center'>
+                                        <div className="flex items-center">
+                                             <label for="small-input" class="mr-5 block pt-1.5 mb-2 text-sx text-[#2D3436] ">ສ່ວນຫລຸດ:</label>
+                                             <input
+                                                  className="border p-1.5 focus:ring-indigo-500 focus:border-indigo-500 block w-24 shadow-sm sm:text-sm border-gray-300 rounded-md text-gray-900"
+                                                  min="0"
+                                                  defaultValue={0}
+                                                  value={modelItem.discout}
+                                                  onChange={(e) => setmodelItem({ ...modelItem, discout: e.target.value })}
+                                                  onKeyUp={(e) => TotalPrice(e.target.value)}
+                                             />
+                                             <span className="pl-2">%</span>
+                                        </div>
+                                        <label className="text-[#777] pl-5">{disLabel?.toLocaleString()}</label>
                                    </div>
                                    <div className='flex'>
-                                        <label for="small-input" class="w-64 block pt-1.5 mb-2 text-sx text-gray-500 dark:text-gray-300">ສ່ວນຫລຸດ</label>
-                                        <label for="small-input" class="w-full text-right block pt-1.5 mb-2 text-base text-gray-500 dark:text-gray-300">0</label>
-                                   </div>
-                                   <div className='flex'>
-                                        <label for="small-input" class="w-64 block pt-1.5 mb-2 text-xl font-bold text-gray-900 dark:text-gray-300">ລວມທັງໝົດ <span>(ກີບ)</span> </label>
-                                        <label for="small-input" class="w-full text-right block pt-1.5 mb-2 text-xl font-bold text-gray-900 dark:text-gray-300">0</label>
+                                        <label for="small-input" class="w-64 block pt-1.5 mb-2 text-xl font-bold text-[#2D3436] ">ລວມທັງໝົດ <span>(ກີບ):</span> </label>
+                                        <label for="small-input" class="w-full text-right block pt-1.5 mb-2 text-xl font-bold text-[#2D3436]"
+                                        >{NewTotal === "0" ? ResultTotal?.toLocaleString() : NewTotal?.toLocaleString()}</label>
                                    </div>
                               </div>
                          </div>

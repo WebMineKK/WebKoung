@@ -1,9 +1,65 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useHistory } from "react-router-dom";
 import OtherSelect from "react-select";
+import { NewAxios } from "../../components/MyAxios";
+import { USER_KEY } from '../../components/userKey'
 
-export default function AddPackaging() {
+export default function AddPackaging({ orderId }) {
+  console.log(orderId)
+
+  const userToken = JSON.parse(localStorage.getItem(USER_KEY));
+
   const history = useHistory();
+  const [loading, setloading] = useState(true);
+  const [customerData, setCustomerData] = useState([])
+
+  const LoadData = () => {
+    setloading(true)
+
+    NewAxios.get('customer', {
+      headers: {
+        'Authorization': `Bearer ${userToken?.token}`
+      },
+    }).then((res) => {
+      if (res.status === 200) {
+        let abc = res?.data?.data
+        let update = abc.map((x) => ({
+          value: x.cus_id,
+          label: x.cus_name
+        }))
+
+        setCustomerData(update)
+      }
+    })
+
+    NewAxios.post('order', {
+      page: 1,
+      limit: 10
+    }, {
+      headers: {
+        'Authorization': `Bearer ${userToken?.token}`
+      },
+    }).then((res) => {
+      if (res.status === 200) {
+        let add = res?.data?.data
+
+        let update = add.map((x) => ({
+          value: x.o_id,
+          label: x.o_id,
+          status: x.o_status
+        }))
+        let add_update = update.filter((x) => x.o_status !== "packing")
+
+        // console.log(add_update)
+      }
+    })
+    setloading(false)
+
+  }
+
+  useEffect(() => {
+    LoadData()
+  }, [])
 
   const [show, setShow] = useState(false);
 
@@ -119,8 +175,16 @@ export default function AddPackaging() {
             </label>
             <div className="w-5/12">
               <OtherSelect
+                styles={{
+                  control: (base, state) => ({
+                    ...base,
+                    "*": {
+                      boxShadow: "none !important",
+                    },
+                  }),
+                }}
                 onChange={(e) => getvaluecus(e)}
-                options={options_cus}
+                options={customerData}
                 isClearable
               />
             </div>
@@ -134,6 +198,14 @@ export default function AddPackaging() {
             </label>
             <div className="w-5/12">
               <OtherSelect
+                styles={{
+                  control: (base, state) => ({
+                    ...base,
+                    "*": {
+                      boxShadow: "none !important",
+                    },
+                  }),
+                }}
                 onChange={(e) => getvaluePO(e)}
                 options={options_bill}
                 isClearable

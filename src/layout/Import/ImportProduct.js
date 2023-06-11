@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useCallback } from 'react'
 import OtherSelect from 'react-select'
 import { useState } from 'react'
 import Myaxios from '../../components/chart/Myaxios';
@@ -6,12 +6,19 @@ import moment from 'moment';
 import { toast } from "react-toastify";
 import Iconwarning from '../../assets/warning.svg'
 import { useHistory } from 'react-router-dom';
+import { USER_KEY } from '../../components/userKey'
+import { NewAxios } from '../../components/MyAxios';
+import { useDropzone } from 'react-dropzone'
+import { PhotoIcon, UserCircleIcon } from '@heroicons/react/24/solid'
 
 export default function ImportProduct() {
+     const selectInputRef = useRef();
 
-     const [dataProduct, setDataProduct] = useState();
+     const [dataProduct, setDataProduct] = useState([]);
 
-     const [loading, setloading] = useState(true);
+     const [loading, setloading] = useState(false);
+     const userToken = JSON.parse(localStorage.getItem(USER_KEY));
+     const [userID, setUserID] = useState(userToken.detail['u_id'])
 
      const history = useHistory();
 
@@ -21,190 +28,177 @@ export default function ImportProduct() {
 
      const [countPro, setCountPro] = useState(0)
 
+     const date = new Date();
+     const futureDate = date.getDate();
+     date.setDate(futureDate);
+     const defaultValue = date.toLocaleDateString('en-CA');
+
      const LoadData = () => {
           setloading(true)
-          Myaxios.options('Product')
-               .then((res) => {
-                    if (res.status === 200) {
-                         setDataProduct(res.data)
-                         // console.log(res.data)
-                    }
-               })
+
+          NewAxios.get('product', {
+               headers: {
+                    'Authorization': `Bearer ${userToken?.token}`
+               },
+          }).then((res) => {
+               if (res.status === 200) {
+                    // console.log(res.data)
+                    let abc = res.data.data
+                    let update = abc.map((x) => ({
+                         value: x.pro_id,
+                         label: x.pro_name,
+                         status: false
+                    }))
+                    setDataProduct(update)
+
+                    // console.log(update)
+
+                    setloading()
+               }
+          })
      }
 
      useEffect(() => {
           LoadData()
      }, [])
 
-     const optionProduct = dataProduct?.map((x) => ({
-          value: x.pro_id,
-          label: x.pro_name,
-     }));
 
-     const [modelItem, setmodelItem] = useState({
-          id: '',
-          pro_name: '',
-          qty_total: '',
-          price_income: '',
-          discount: '',
-          note: '',
-          date: new Date()
-     })
+     const onClear = () => {
+          selectInputRef.current.select.clearValue();
+     };
 
      const [modelImport, setModelImport] = useState({
-          income_id: "",
-          income_date: new Date(),
-          vehicle_regis: "",
-          image_refer: "",
-          total_product: "",
-          amount: "",
-          discount: "",
-          total: ""
+          image: '',
+          regis: '',
+          total_price: '',
+          company_name: '',
+          bill_no: '',
+          note: '',
      })
 
-     const TestSave = () => {
-          let sendImport = modelImport
-          modelImport.income_id = parseInt(modelImport.income_id)
-          modelImport.income_date = moment(modelImport.income_date).format("YYYY-MM-DDTHH:mm:ss.000Z")
-          modelImport.image_refer = modelImport.image_refer
-          modelImport.vehicle_regis = modelImport.vehicle_regis
-          modelImport.total_product = parseInt(countPro)
-          modelImport.amount = parseInt(Amount)
-          modelImport.discount = parseInt(modelItem.discount)
-          modelImport.total = parseInt(ResultTotal)
 
-          console.log(sendImport)
-     }
+     const [img, setImg] = useState(null)
+
+     const onDrop = useCallback(acceptedFiles => {
+          let file = acceptedFiles[0]
+          let form = new FormData
+          form.append("image", file)
+          NewAxios.post("upload-image", form).then(res => {
+               if (res.status === 200) {
+                    let img_url = res.data
+                    setImg(img_url.image_url)
+               }
+          })
+
+     }, [])
+     const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop })
+
 
      const [getID, setgetID] = useState([])
      function getvalueProduct(e) {
           setgetID(e)
-          // console.log(e);
      }
 
-     const [index, setindex] = useState({
-          id: '',
-          pro_name: '',
-          qty_total: '',
-          price_income: '',
-          discount: '',
-          note: '',
-          date: new Date()
-     })
+     const [index, setindex] = useState([])
 
      const addItem = (e) => {
 
-          let inserItem = dataProduct?.map((row) => {
-               if (row.pro_id === e.value) {
-                    row.status = true
+          let inserItem = dataProduct?.map((x) => {
+               if (x.value === e.value) {
+                    // console.log(x)
+                    x.label = x.label
+                    x.value = x.value
+                    x.status = true
+                    x.qty = ''
+                    x.price = ''
                }
-               return row
+               return x
           })
-          // id: getID.value,
-          //      pro_name: getID.label,
-          //           qty_total: modelItem.qty_total,
-          //                price_income: modelItem.price_income,
-          //                     discount: 0,
-          //                          note: modelItem.note,
-          //                               date: moment(modelItem.date).format("YYYY-MM-DDTHH:mm:ss.000Z")
 
+          setindex(inserItem)
 
-          setmodelItem(inserItem)
-     }
+          // console.log(index)
 
-     const clearSelect = () => {
-          optionProduct(null)
+          let update = dataProduct?.filter((x) => x.value !== getID.value)
+
+          setDataProduct(update)
      }
 
      const removeItem = (e) => {
-          const findID = index.filter((item) => item.id != e)
+          const findID = index.filter((item) => item.value != e)
           setindex(findID)
      }
 
+     const Calculate = (qty, idx) => {
+          let sl = qty
 
-
-     const handleInputPrice = (price, id) => {
-          let update = index.map((row) => {
-               if (row.id === id) {
-                    row.price_income = parseInt(price)
-               }
-               return row
-          })
-          setindex(update)
-
-          let sum = update.reduce(function (prev, current) {
-               return prev + +current.price_income
-          }, 0)
-          setAmount(sum)
-
-          let count = update.length
-          setCountPro(count)
-     }
-
-     function Total() {
-          let totalAll = disText + Amount
-          setResultTotal(totalAll)
-
-     }
-
-     const discountTotal = (e) => {
-          let sumDis = (e * Amount) / 100
-          setdisText(sumDis)
-     }
-
-     const handleInputQty = (qty, id) => {
-          let update = index.map((row) => {
-               if (row.id === id) {
-                    row.qty_total = parseInt(qty)
+          let update = index.map((row, i) => {
+               // console.log(row)
+               if (idx === i) {
+                    row.qty = parseInt(sl)
                }
                return row
           })
           setindex(update)
      }
 
-     const handleInputDis = (dis, id) => {
-          let update = index.map((row) => {
-               if (row.id === id) {
-                    row.discount = parseInt(dis)
+     const handleInputPrice = (price, idx) => {
+          let update = index.map((row, i) => {
+               if (idx === i) {
+                    row.price = parseInt(price)
                }
                return row
           })
           setindex(update)
      }
 
-     const handleInputNote = (note, id) => {
-          let update = index.map((row) => {
-               if (row.id === id) {
-                    row.note = note
+
+     const SaveProduct = () => {
+
+          let dataIndex = []
+          let select_data = index.filter(x => x.status === true)
+
+          let Demo = select_data.map((x) => {
+               let data = {
+                    pro_id: x.value,
+                    pro_unit: x.qty,
+                    pro_price: x.price
                }
-               return row
+
+               dataIndex.push(data)
           })
-          setindex(update)
-          // console.log(update)
-     }
 
-     const SaveIncome = () => {
-          console.log(index)
+          NewAxios.post('create_import', {
+               u_id: userID,
+               image: img,
+               regis: modelImport.regis,
+               total_price: modelImport.total_price,
+               company_name: modelImport.company_name,
+               bill_no: modelImport.bill_no,
+               note: modelImport.note,
+               import_detail: dataIndex
+          }, {
+               headers: {
+                    'Authorization': `Bearer ${userToken?.token}`
+               },
+          }).then(res => {
+               if (res.status === 200) {
 
-          Myaxios.post('IncomeDetails/Insert', index).then(res => {
-               if (res.status === 201) {
                     toast.success("ເພີ່ມຂໍ້ມູນໃຫມ່ສຳເລັດ", {
-                         position: toast.POSITION.BOTTOM_RIGHT,
+                         position: toast.POSITION.BOTTOM_LEFT,
                     });
+
+                    history.push('/home/import')
 
                } else {
                     toast.error("ບໍ່ສຳເລັດປ້ອນຂໍ້ມູນບໍ່ຖືກຕ້ອງ!", {
-                         position: toast.POSITION.BOTTOM_RIGHT,
+                         position: toast.POSITION.BOTTOM_LEFT,
                     });
                }
           })
-
      }
 
-     const selectInputRef = useRef();
-     const onClear = () => {
-          selectInputRef.current.select.clearValue();
-     };
+
 
      return (
           <>
@@ -212,7 +206,6 @@ export default function ImportProduct() {
                     <div className='flex justify-between'>
                          <div className="px-4 py-5 sm:px-6">
                               <h3 className="text-lg leading-6 font-bold text-gray-900">ຂໍ້ມູນເບື້ອງຕົ້ນ</h3>
-                              <p className="mt-1 max-w-2xl text-sm text-gray-500">ປ້ອນຂໍ້ມູນໃນຊ່ອງວ່າງ</p>
                          </div>
                          <div className='px-4 py-5 sm:px-6'>
                               <button
@@ -235,9 +228,6 @@ export default function ImportProduct() {
                                    </svg>
                                    <span class="pl-2 text-base">ຍົກເລີກ</span>
                               </button>
-                              <button onClick={TestSave}>
-                                   TestSave
-                              </button>
                          </div>
                     </div>
                     <div className='w-100 px-4 py-5 sm:px-6'>
@@ -249,8 +239,7 @@ export default function ImportProduct() {
                                              <input
                                                   className="bg-gray-50 border p-2.5 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
                                                   type="date"
-                                                  value={modelImport.income_date}
-                                                  onChange={(e) => setModelImport({ ...modelImport, income_date: e.target.value })}
+                                                  defaultValue={defaultValue}
                                              />
                                         </div>
                                    </div>
@@ -260,8 +249,8 @@ export default function ImportProduct() {
                                              <input
                                                   className="border p-2.5 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
                                                   type="text"
-                                                  value={modelImport.income_id}
-                                                  onChange={(e) => setModelImport({ ...modelImport, income_id: e.target.value })}
+                                                  value={modelImport.bill_no}
+                                                  onChange={(e) => setModelImport({ ...modelImport, bill_no: e.target.value })}
                                              />
                                         </div>
                                    </div>
@@ -271,8 +260,19 @@ export default function ImportProduct() {
                                              <input
                                                   className="border p-2.5 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
                                                   type="text"
-                                                  value={modelImport.vehicle_regis}
-                                                  onChange={(e) => setModelImport({ ...modelImport, vehicle_regis: e.target.value })}
+                                                  value={modelImport.regis}
+                                                  onChange={(e) => setModelImport({ ...modelImport, regis: e.target.value })}
+                                             />
+                                        </div>
+                                   </div>
+                                   <div className='flex mt-3'>
+                                        <div class="w-1/3 text-right pr-5 pt-1.5">ບໍລິສັດຂົນສົ່ງ: </div>
+                                        <div class="w-1/2">
+                                             <input
+                                                  className="border p-2.5 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                                                  type="text"
+                                                  value={modelImport.company_name}
+                                                  onChange={(e) => setModelImport({ ...modelImport, company_name: e.target.value })}
                                              />
                                         </div>
                                    </div>
@@ -283,46 +283,43 @@ export default function ImportProduct() {
                                              ເອກະສານ:
                                         </label>
                                    </div>
-                                   <div class="w-2/5">
-                                        <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
-                                             <div className="space-y-1 text-center">
-                                                  <svg
-                                                       className="mx-auto h-10 w-12 text-gray-400"
-                                                       stroke="currentColor"
-                                                       fill="none"
-                                                       viewBox="0 0 48 48"
-                                                       aria-hidden="true"
-                                                  >
-                                                       <path
-                                                            d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
-                                                            strokeWidth={2}
-                                                            strokeLinecap="round"
-                                                            strokeLinejoin="round"
-                                                       />
-                                                  </svg>
-                                                  <div className="flex text-sm text-gray-600">
-                                                       <label
-                                                            htmlFor="file-upload"
-                                                            className="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500"
-                                                       >
-                                                            <span className='pl-6'>Upload a file</span>
-                                                            <input id="file-upload" name="file-upload" type="file" className="sr-only" />
-                                                       </label>
-                                                  </div>
-                                                  <p className="pl-1 text-gray-500">or drag and drop</p>
-                                                  <p className="text-xs text-gray-500">PNG, JPG up to 1 MB</p>
-                                             </div>
+                                   <div class="w-3/5">
+                                        <div {...getRootProps()}>
+                                             <input {...getInputProps()} />
+                                             {
+                                                  isDragActive ?
+                                                       <p>Drop the files  here ...</p> :
+                                                       img === null
+                                                            ? <div>
+                                                                 <div className="mt-2 flex justify-center rounded-lg border border-dashed border-gray-900/25 px-6 py-6">
+                                                                      <div className="text-center">
+                                                                           <PhotoIcon className="mx-auto h-12 w-12 text-gray-300" aria-hidden="true" />
+                                                                           <div className="mt-4 flex text-sm leading-6 text-gray-600">
+                                                                                <label
+                                                                                     htmlFor="file-upload"
+                                                                                     className="relative cursor-pointer rounded-md bg-white font-semibold text-indigo-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-indigo-600 focus-within:ring-offset-2 hover:text-indigo-500"
+                                                                                >
+                                                                                     <span>Upload a file</span>
+                                                                                </label>
+                                                                                <p className="pl-1">or drag and drop</p>
+                                                                           </div>
+                                                                           <p className="text-xs leading-5 text-gray-600">PNG, JPG up to 4MB</p>
+                                                                      </div>
+                                                                 </div>
+                                                            </div>
+                                                            : <img src={img} alt="test" />
+                                             }
                                         </div>
                                    </div>
                               </div>
                          </div>
                     </div>
                </div>
-               <div className="bg-white sm:rounded-md mt-5">
+               <div className="bg-white sm:rounded-md mt-5 border-solid border border-[#ddd]">
                     <div className='flex py-5 sm:px-6'>
-                         <div className='w-3/4 flex'>
+                         <div className='flex w-full'>
                               <div className='w-3/4'>
-                                   <div class="pr-5 pt-1.5 pb-2">ເລືອກລາຍການສິນຄ້າ:</div>
+                                   <div class="pr-5 pt-1.5 pb-1">ລາຍການສິນຄ້າ:</div>
                                    <OtherSelect
                                         styles={{
                                              control: (base, state) => ({
@@ -332,32 +329,24 @@ export default function ImportProduct() {
                                                   },
                                              }),
                                         }}
-                                        closeMenuOnSelect={true}
                                         onChange={(e) => addItem(e) || onClear(e)}
-                                        options={optionProduct}
+                                        options={dataProduct}
                                    />
                               </div>
-                              <div className='w-1/6 ml-5'>
-                                   {/*                                    
-                                   <div class="pr-5 pt-1.5 pb-2">ຈຳນວນ / ລັງ</div>
+                              <div>
+                                   <div class="pr-5 pt-1.5 pb-1">ບາໂຄ໊ດ</div>
                                    <input
-                                        className=" p-1.6 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md text-gray-900"
-                                        id="inline-full-name" type="number" value={modelItem.qty_total}
-                                        onChange={(e) => setmodelItem({ ...modelItem, qty_total: e.target.value })} /> */}
-                                   <button type="button"
-                                        onClick={(e) => addItem(e) || onClear(e)}
-                                        class="w-32 text-white mt-7 bg-[#2E4262] hover:bg-[#4F71A8] focus:ring-4 focus:ring-blue-300 rounded-lg text-sm px-5 py-2.5 mr-2 mb-2">
-                                        ເພີ່ມຂໍ້ມູນ
-                                   </button>
+                                        className="border p-1.5 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md text-gray-900"
+                                   />
                               </div>
                          </div>
-                         <div className='w-1/3  block pt-7'>
+                         <div className='w-1/3  block pt-8'>
                               <div className='block text-right'>
-
-
-
+                                   <button
+                                        onClick={SaveProduct}
+                                        class="w-32 text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-bold rounded-lg text-sm px-5 py-2.5 mr-2 mb-2 ">
+                                        ບັນທືກຂໍ້ມູນ</button>
                               </div>
-
                          </div>
                     </div>
                     <div className="px-4 sm:px-6">
@@ -376,16 +365,10 @@ export default function ImportProduct() {
                                              ຊື່ສິນຄ້າ
                                         </th>
                                         <th width={80} class="py-3 pl-2 border">
-                                             ຈຳນວນ / ລັງ
+                                             ຈຳນວນ
                                         </th>
                                         <th width={80} class="py-3 pl-2 border">
                                              ລາຄານຳເຂົ້າ
-                                        </th>
-                                        <th width={70} class="py-3 pl-2 border">
-                                             ສ່ວນຫລຸດ
-                                        </th>
-                                        <th width={100} class="py-3 pl-2 border">
-                                             ລວມ
                                         </th>
                                         <th width={60} class="py-3 pl-2">
                                              ຈັດການ
@@ -394,16 +377,44 @@ export default function ImportProduct() {
                               </thead>
                               <tbody>
                                    {
-                                        dataProduct?.map((row, idx) => {
-                                             if (row.status) {
+                                        index?.map((row, idx) => {
+                                             if (row.status === true) {
                                                   return (
                                                        <>
-                                                            <tr key={idx} class="bg-white border-b ">
-                                                                 <td class="px-3 py-4 text-gray-900">
-                                                                      {row.pro_id}
+                                                            <tr key={idx}
+                                                                 class="bg-white border-solid border-b border-[#ddd] hover:bg-gray-50">
+                                                                 <td class="px-3 py-4 text-gray-900 text-center">
+                                                                      {row.value}
                                                                  </td>
                                                                  <td scope="row" class="px-3 py-4 font-medium text-gray-900">
-                                                                      {row.pro_name}
+                                                                      {row.label}
+                                                                 </td>
+                                                                 <td width={150} class="px-3 flex">
+                                                                      <input
+                                                                           className="border p-1.5 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md text-gray-900"
+                                                                           id="inline-full-name" type="number"
+                                                                           value={row.qty}
+                                                                           onChange={(e) => {
+                                                                                Calculate(e.target.value, idx)
+                                                                           }}
+                                                                      />
+                                                                 </td>
+                                                                 <td width={80} class="px-3 py-2">
+                                                                      <input
+                                                                           className="border p-1.5 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md text-gray-900"
+                                                                           id="inline-full-name" type="number"
+                                                                           value={row.price}
+                                                                           onChange={(e) => {
+                                                                                handleInputPrice(e.target.value, idx)
+                                                                           }}
+                                                                      />
+                                                                 </td>
+                                                                 <td width={80} class="px-3 py-2 text-center">
+                                                                      <button
+                                                                           onClick={() => removeItem(row.value)}
+                                                                           className='relative flex px-3 py-[4px] text-[#2D3436] rounded-md ml-3 border-[#ddd] border border-solid'>
+                                                                           ລືບ
+                                                                      </button>
                                                                  </td>
                                                             </tr>
                                                        </>
@@ -413,45 +424,37 @@ export default function ImportProduct() {
                                    }
                               </tbody>
                          </table>
-                    </div>
-
-               </div>
-               <div className='border-dashed border-t-[1px] border-[#c4c4c4] my-10 mx-5'></div>
-               <div className='bg-white grid grid-cols-3 gap-5 sm:rounded-md mt-5'>
-                    <div className='col-span-2'>
-                         <div className='w-full pl-5'>
-                              <textarea rows="3" class="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300" placeholder="ໝາຍເຫດ..."></textarea>
-                         </div>
-                    </div>
-                    <div className='px-5'>
-                         <div className='grid grid-cols-2 gap-2'>
-                              <label for="small-input" class="w-64 block text-sx text-gray-800">ລວມເປັນເງີນ:</label>
-                              <label for="small-input" class="w-full text-right block text-base text-gray-800 ">{(Amount).toLocaleString(undefined, { maximumFractionDigits: 2 })}</label>
-                              <label for="small-input" class="w-64 block text-sx text-gray-800 pt-2">ສ່ວນຫລຸດ (%):</label>
-                              <input
-                                   className="border p-1.5 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md text-gray-900"
-                                   id="inline-full-name" type="number"
-                                   min="0"
-                                   value={disText}
-                                   on={(e) => discountTotal(e.target.value)}
-                              />
-                              <div className='col-span-2 pt-2'>
-                                   <div className='flex bg-blue-700 py-2 px-3 rounded-md'>
-                                        <label class="w-64 block text-lg text-white">ທັງໝົດ:</label>
-                                        <label class="w-full text-right block text-lg  text-white ">{(Total).toLocaleString(undefined, { maximumFractionDigits: 2 })} ກີບ</label>
-                                   </div>
+                         <div className='flex justify-end pb-5 mt-5'>
+                              <label className='pr-3 pt-1 font-bold text-lg'>
+                                   ລວມມູນຄ່າທັງໝົດ:
+                              </label>
+                              <div>
+                                   <input
+                                        className="border p-1.5 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md text-gray-900"
+                                        id="inline-full-name" type="number"
+                                        value={modelImport.total_price}
+                                        onChange={(e) => setModelImport({ ...modelImport, total_price: e.target.value })}
+                                   />
                               </div>
                          </div>
                     </div>
+
                </div>
-               <div className='border-dashed border-t-[1px] border-[#c4c4c4] my-10'></div>
-               <div className='flex justify-end'>
-                    <button type="button"
-                         onClick={SaveIncome}
-                         class="w-32 text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 rounded-lg text-sm px-5 py-2.5 mr-2 mb-2">
-                         ບັນທືກ
-                    </button>
+               <div className='border-dashed border-t-[1px] border-[#c4c4c4] my-3 mx-5'></div>
+               <div className='bg-white grid grid-cols-3 gap-5 sm:rounded-md py-4 border-solid border border-[#ddd]'>
+                    <div className='col-span-2'>
+                         <label className='pl-5'>ໝາຍເຫດ</label>
+                         <div className='w-full pl-5 pt-2'>
+                              <textarea rows="3"
+                                   class="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300"
+                                   placeholder="ເນື້ອໃນ..."
+                                   value={modelImport.note}
+                                   onChange={(e) => setModelImport({ ...modelImport, note: e.target.value })}></textarea>
+                         </div>
+                    </div>
+
                </div>
+               <div className='mb-10'></div>
           </>
 
      )

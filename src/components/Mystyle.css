@@ -15,7 +15,7 @@ html {
 }
 
 .my-table th {
-     font-size: 0.875rem;
+     font-size: 15px;
      border: 1px solid #ddd;
      color: #2D3436;
      background: #f1f1f1;
@@ -23,7 +23,7 @@ html {
 }
 
 .my-table td {
-     font-size: 0.875rem;
+     font-size: 15px;
      color: #6f8085;
 }
 
@@ -88,4 +88,47 @@ tr {
 .Toastify__toast--warning {
      background: #f0f9fa !important;
      font-family: "Noto Sans Lao", sans-serif !important;
+}
+
+
+
+.my-table-im {
+
+     && th {
+          font-size: 15px;
+          border: 1px solid #ddd;
+          color: #2D3436;
+          background: #f1f1f1;
+          font-weight: bold;
+     }
+
+     && td {
+          height: 50px;
+          vertical-align: middle;
+          color: #2D3436;
+     }
+}
+
+
+.my-table-order {
+
+     && th {
+          padding: 8px 12px;
+          font-size: 15px;
+          border: 1px solid #ddd;
+          color: #2D3436;
+          background: #f1f1f1;
+          font-weight: bold;
+     }
+
+
+     && td {
+          padding: 6px 12px;
+          height: 35px;
+          vertical-align: middle;
+          color: #2D3436;
+
+     }
+
+
 }

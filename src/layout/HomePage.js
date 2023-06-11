@@ -28,6 +28,8 @@ import icdeli from './../components/iconMenu/delivery.svg'
 import iccus from './../components/iconMenu/customer.svg'
 import icretrun from './../components/iconMenu/return.svg'
 import HomeCar from './car/HomeCar';
+import BillNo from './order/BillNo';
+import AgainPreorder from './order/AgainPreorder';
 
 function classNames(...classes) {
   return classes.filter(Boolean).join(' ')
@@ -284,6 +286,10 @@ export default function HomePage() {
                 <Route path={'/home/packaging/add'} exact component={AddPackaging} />
 
                 <Route path={'/home/car'} exact component={HomeCar} />
+
+                <Route path={'/home/preorder/bill'} exact component={BillNo} />
+                <Route path={'/home/preorder/copy'} exact component={AgainPreorder} />
+
               </Switch>
             </div>
           </main>

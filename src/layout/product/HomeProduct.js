@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useHistory } from "react-router-dom";
 import Modal from "react-modal";
 import Myaxios from "../../components/chart/Myaxios";
@@ -11,7 +11,8 @@ import { toast } from "react-toastify";
 import Iconwarning from '../../assets/warning.svg'
 import { NewAxios } from "../../components/MyAxios";
 import { USER_KEY } from '../../components/userKey'
-
+import { useDropzone } from 'react-dropzone'
+import { PhotoIcon, UserCircleIcon } from '@heroicons/react/24/solid'
 
 const customStyles = {
   content: {
@@ -47,9 +48,27 @@ export default function HomeProduct() {
   const [dataType, setDataType] = useState()
   const [countPro, setCountPro] = useState([]);
 
+  const [totalProduct, setTotalProduct] = useState([])
+
   const [open, setOpen] = useState({ edit: false, delete: false, add: false, check: false, view: false })
 
   const [loading, setloading] = useState(true);
+
+  const [img, setImg] = useState(null)
+
+  const onDrop = useCallback(acceptedFiles => {
+    let file = acceptedFiles[0]
+    let form = new FormData
+    form.append("image", file)
+    NewAxios.post("upload-image", form).then(res => {
+      if (res.status === 200) {
+        let img_url = res.data
+        setImg(img_url.image_url)
+      }
+    })
+
+  }, [])
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop })
 
   const LoadData = () => {
     setloading(true)
@@ -61,7 +80,7 @@ export default function HomeProduct() {
     }).then((res) => {
       if (res.status === 200) {
         setDataTable(res?.data?.data)
-
+        setTotalProduct(res?.data)
         // console.log(res.data?.data)
         setloading(false)
       }
@@ -73,33 +92,9 @@ export default function HomeProduct() {
       },
     }).then((res) => {
       if (res.status === 200) {
-
-        // let arr = [{ cate_id: 0, cate_name: "ທັງໝົດ", seq: 0, status: true }]
-
-        // res.data?.data?.map(row => {
-        //   arr.push({
-        //     cate_id: row.cate_id,
-        //     cate_name: row.cate_name,
-        //     seq: row.seq,
-        //     status: row.status
-        //   })
-        // })
-        // console.log(arr)
-
         setDataType(res?.data?.data)
-
-        // setextensions(arr)
-        // setCurrentExtension(arr[0])
-
       }
     })
-    // Myaxios.get('ReportProduct/GetTotalProduct')
-    //   .then((res) => {
-    //     if (res.status === 200) {
-    //       setCountPro(res.data)
-    //       console.log(res.data)
-    //     }
-    //   })
   }
 
   useEffect(() => {
@@ -117,17 +112,18 @@ export default function HomeProduct() {
 
 
   const ProStatus = [
-    { label: 'ພ້ອມຂາຍ', value: 1 },
-    { label: 'ສິນຄ້າໝົດ', value: 0 }
+    { label: 'ພ້ອມຂາຍ', value: "active" },
+    { label: 'ສິນຄ້າໝົດ', value: "deactive" }
   ]
 
   const [getType, setGetType] = useState(0);
   const getTypePro = (e) => {
     setGetType(e.target.value)
-    console.log(e.target.value)
+    // console.log(e.target.value)
   }
 
-  const [getStatus, setgetStatus] = useState(1);
+
+  const [getStatus, setgetStatus] = useState("active");
   const getStatusPro = (e) => {
     setgetStatus(e.target.value)
   }
@@ -151,6 +147,7 @@ export default function HomeProduct() {
     modelAPI.unit = parseInt(modelAPI.unit)
     modelAPI.cate_id = parseInt(getType)
     modelAPI.price = parseInt(modelAPI.price)
+    modelAPI.img = img
 
     // console.log(sendModel)
     NewAxios.post('product', sendModel, {
@@ -216,23 +213,27 @@ export default function HomeProduct() {
     let id = dataTable.filter(id => id.pro_id === e)
     setmodelAPI(id[0])
     setGetEdit(id[0])
-    // console.log(id[0])
+    setImg(id[0]['pro_img'] === "" ? null : id[0]['pro_img'])
+    setGetType(id[0]['cate_id'][0])
+    setgetStatus(id[0]['pro_status'] === true ? "active" : "deactive")
+
     setOpen({ ...open, edit: true })
   }
 
   const SaveEdit = () => {
+    let send = {
+      id: getEdit['pro_id'],
+      name: modelAPI.pro_name,
+      price: modelAPI.pro_price,
+      unit: modelAPI.pro_unit,
+      cate_id: getType,
+      barcode: "",
+      img: img,
+      status: getStatus
+    }
 
     NewAxios.put(`product`,
-      {
-        id: getEdit['pro_id'],
-        name: modelAPI.pro_name,
-        price: parseInt(modelAPI.pro_price),
-        unit: parseInt(modelAPI.pro_unit),
-        cate_id: parseInt(getType),
-        barcode: "",
-        img: "",
-        status: parseInt(getStatus) ? true : false
-      },
+      send,
       {
         headers: {
           'Authorization': `Bearer ${userToken?.token}`
@@ -240,18 +241,18 @@ export default function HomeProduct() {
       }
     ).then(res => {
       if (res.status === 200) {
-        toast.success("ແກ້ໄຂຂໍ້ມູນສຳເລັດ", {
-          position: toast.POSITION.BOTTOM_LEFT,
+        toast.success("ແກ້ໄຂຂໍ້ມູນສຳເລັດແລ້ວ!", {
+          position: toast.POSITION.BOTTOM_RIGHT,
         });
 
         LoadData()
-
       } else {
         toast.error("ບໍ່ສຳເລັດປ້ອນຂໍ້ມູນບໍ່ຖືກຕ້ອງ!", {
-          position: toast.POSITION.BOTTOM_LEFT,
+          position: toast.POSITION.BOTTOM_RIGHT,
         });
       }
     })
+
 
     setOpen({ ...open, edit: false })
   }
@@ -272,28 +273,28 @@ export default function HomeProduct() {
                 <div class="flex items-center justify-center py-3">
                   <div class="h-2.5 w-2.5 rounded-full bg-pink-300 mr-2 "></div>
                   <span>ທັງໝົດ:</span>
-                  <span className="text-4xl pl-2">{countPro.total}</span>
+                  <span className="text-4xl pl-2">{totalProduct?.total_data?.total}</span>
                 </div>
               </div>
               <div className="bg-cyan-200 sm:rounded-lg h-16">
                 <div class="flex items-center justify-center py-3">
                   <div class="h-2.5 w-2.5 rounded-full bg-indigo-500 mr-2 "></div>
                   <span>ພ້ອມຂາຍ:</span>
-                  <span className="text-4xl pl-2">{countPro.available}</span>
+                  <span className="text-4xl pl-2">{totalProduct?.total_data?.ready}</span>
                 </div>
               </div>
               <div className="bg-red-100 sm:rounded-lg h-16">
                 <div class="flex items-center justify-center py-3">
                   <div class="h-2.5 w-2.5 rounded-full bg-lime-500 mr-2 "></div>
                   <span>ໃກ້ຈະໝົດ:</span>
-                  <span className="text-4xl pl-2">{countPro.nearExpire}</span>
+                  <span className="text-4xl pl-2">{totalProduct?.total_data?.small}</span>
                 </div>
               </div>
               <div className="bg-lime-100 sm:rounded-lg h-16">
                 <div class="flex items-center justify-center py-3">
                   <div class="h-2.5 w-2.5 rounded-full bg-red-400 mr-2 "></div>
                   <span>ໝົດແລ້ວ:</span>
-                  <span className="text-4xl pl-2">{countPro.expire}</span>
+                  <span className="text-4xl pl-2">{totalProduct?.total_data?.gone}</span>
                 </div>
               </div>
             </div>
@@ -366,7 +367,7 @@ export default function HomeProduct() {
                     ລາຄາ (ກີບ)
                   </th>
                   <th scope="col" class="px-3 py-3 border">
-                    ຈຳນວນ/ອັນ
+                    ຈຳນວນ
                   </th>
                   <th scope="col" class="px-3 py-3 border">
                     ໝວດໝູ່
@@ -382,6 +383,7 @@ export default function HomeProduct() {
               <tbody>
                 {loading ? <></>
                   : dataTable?.map((x, idx) => {
+                    // console.log(x)
                     return (
                       <>
                         <tr key={idx} class="bg-white border-b border-[#EFF1F2] border-solid">
@@ -394,13 +396,23 @@ export default function HomeProduct() {
 
                           </td>
                           <td class="py-3 pl-3 w-24">
-                            {x.pro_price}
+                            {x.pro_price?.toLocaleString()}
                           </td>
                           <td class="py-3 pl-3 w-24">
-                            {x.pro_unit}
+                            {x.pro_unit?.toLocaleString()}
                           </td>
-                          <td class="py-3 pl-3 w-24">{x.cate_id}</td>
-                          <td class="py-3 pl-3 w-24">{x.pro_status}</td>
+                          <td class="py-3 pl-3 w-24">{x.cate_name}</td>
+                          <td class="py-3 pl-3 w-24">
+                            {
+                              x.pro_status === "active"
+                                ? <span className="inline-flex items-center rounded-md bg-yellow-50 px-2 py-1 text-sm font-medium text-yellow-800 ring-1 ring-inset ring-yellow-600/20">
+                                  ພ້ອມຂາຍ
+                                </span>
+                                : <span className="inline-flex items-center rounded-md bg-red-50 px-2 py-1 text-sm font-medium text-red-700 ring-1 ring-inset ring-red-600/10">
+                                  ໝົດແລ້ວ
+                                </span>
+                            }
+                          </td>
                           <td class="py-3 pl-3 w-24">
                             <div className='flex'>
                               <button
@@ -521,9 +533,6 @@ export default function HomeProduct() {
                           </label>
                           <select
                             onChange={getTypePro}
-                            id="country"
-                            name="country"
-                            autoComplete="country-name"
                             className="mt-1 block w-full rounded-md border border-gray-300 bg-white py-2 px-3 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
                           >
                             <option selected>ເລືອກ</option>
@@ -539,7 +548,39 @@ export default function HomeProduct() {
                             }
                           </select>
                         </div>
-
+                      </div>
+                      <div className="grid grid-cols-2 gap-5">
+                        <div>
+                          <div {...getRootProps()}>
+                            <input {...getInputProps()} />
+                            {
+                              isDragActive ?
+                                <p>Drop the files  here ...</p> :
+                                img === null
+                                  ? <div>
+                                    <label htmlFor="cover-photo" className="block text-sm font-medium leading-6 text-gray-900">
+                                      ຮູບປະກອບ
+                                    </label>
+                                    <div className="mt-2 flex justify-center rounded-lg border border-dashed border-gray-900/25 px-6 py-6">
+                                      <div className="text-center">
+                                        <PhotoIcon className="mx-auto h-12 w-12 text-gray-300" aria-hidden="true" />
+                                        <div className="mt-4 flex text-sm leading-6 text-gray-600">
+                                          <label
+                                            htmlFor="file-upload"
+                                            className="relative cursor-pointer rounded-md bg-white font-semibold text-indigo-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-indigo-600 focus-within:ring-offset-2 hover:text-indigo-500"
+                                          >
+                                            <span>Upload a file</span>
+                                          </label>
+                                          <p className="pl-1">or drag and drop</p>
+                                        </div>
+                                        <p className="text-xs leading-5 text-gray-600">PNG, JPG up to 4MB</p>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  : <img src={img} alt="test" />
+                            }
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -744,12 +785,11 @@ export default function HomeProduct() {
                           </label>
                           <select
                             onChange={getTypePro}
-                            value={modelAPI.cate_id}
+                            value={getType}
                             className="mt-1 block w-full rounded-md border border-gray-300 bg-white py-2 px-3 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
                           >
                             <option selected>ເລືອກ</option>
                             {
-                              // console.log(dataType)
                               dataType?.map((x, idx) => {
                                 return (
                                   <>
@@ -766,7 +806,7 @@ export default function HomeProduct() {
                           </label>
                           <select
                             onChange={getStatusPro}
-                            value={modelAPI.status}
+                            value={getStatus}
                             className="mt-1 block w-full rounded-md border border-gray-300 bg-white py-2 px-3 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
                           >
                             <option selected>ເລືອກ</option>
@@ -781,6 +821,42 @@ export default function HomeProduct() {
                               })
                             }
                           </select>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-5">
+                        <div>
+                          <div {...getRootProps()}>
+                            <input {...getInputProps()} />
+                            <div>
+                              <label htmlFor="cover-photo" className="block text-sm font-medium leading-6 text-gray-900">
+                                ຮູບປະກອບ
+                              </label>
+                              <div className="mt-2 flex justify-center rounded-lg border border-dashed border-gray-900/25 px-6 py-6">
+                                <div className="text-center">
+                                  {img === null ? <PhotoIcon className="mx-auto h-12 w-12 text-gray-300" aria-hidden="true" /> :
+                                    <img src={img} alt="test" />}
+                                  <div className="mt-4 flex text-sm leading-6 text-gray-600">
+                                    <label
+                                      htmlFor="file-upload"
+                                      className="relative cursor-pointer rounded-md bg-white font-semibold text-indigo-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-indigo-600 focus-within:ring-offset-2 hover:text-indigo-500"
+                                    >
+                                      <span>Upload a file</span>
+                                    </label>
+                                    <p className="pl-1">or drag and drop</p>
+                                  </div>
+                                  <p className="text-xs leading-5 text-gray-600">PNG, JPG up to 4MB</p>
+                                </div>
+                              </div>
+                            </div>
+                            {/* {
+                              isDragActive ?
+                                <p>Drop the files  here ...</p> :
+                                img === null
+                                  ? <></>
+                                  : <img src={img} alt="test" />
+
+                            } */}
+                          </div>
                         </div>
                       </div>
                     </div>
