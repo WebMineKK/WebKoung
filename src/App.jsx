@@ -1,4 +1,8 @@
-import { useState } from 'react'
+import { BrowserRouter, Route, Switch } from 'react-router-dom';
+import './index.css'
+import HomeLogin from './views/login/HomeLogin';
+import HomePage from './views/layout/HomePage';
+import './components/style/TableStyle.css'
 
 
 function App() {
@@ -6,9 +10,12 @@ function App() {
 
   return (
     <>
-      <h1 className="text-3xl font-bold underline">
-        Hello world!
-      </h1>
+      <BrowserRouter>
+        <Switch>
+          <Route path={'/'} exact component={HomeLogin} />
+          <Route path={'/home'} component={HomePage} />
+        </Switch>
+      </BrowserRouter>
     </>
   )
 }

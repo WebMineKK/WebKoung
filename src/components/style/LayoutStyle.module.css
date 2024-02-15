@@ -1,0 +1,25 @@
+.header {
+    margin: 1.5rem 0rem 0rem 1rem;
+    font-size: 1.125rem;
+    font-weight: bold;
+}
+
+.content {
+    border: 1px solid #ddd;
+    margin: 1.5rem 1rem;
+    padding: 1.5rem;
+    background-color: #fff;
+    border-radius: .5rem;
+}
+
+.silde {
+    border: 1px solid #ddd;
+    margin-top: .7rem;
+    margin-right: 16px;
+    background-color: #fff;
+    border-radius: .5rem;
+}
+
+.sildecontect {
+    padding: 1.5rem;
+}

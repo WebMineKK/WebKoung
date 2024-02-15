@@ -1,0 +1,21 @@
+.custable .ant-table-cell {
+    padding: .625rem .3125rem !important;
+    font-size: .875rem !important;
+
+}
+
+.custable .ant-table-thead tr th {
+    padding: .5rem .3125rem !important;
+    font-size: .875rem !important;
+}
+
+.custablepro .ant-table-cell {
+    padding: .625rem .3125rem !important;
+    font-size: .875rem !important;
+
+}
+
+.custablepro .ant-table-thead tr th {
+    padding: .5rem .3125rem !important;
+    font-size: .875rem !important;
+}

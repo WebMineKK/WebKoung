@@ -1,0 +1,17 @@
+.base {
+    /* font-family: 'Noto Sans Lao', system-ui, 'Inter', sans-serif; */
+    box-shadow: none !important;
+    background-color: #2563eb !important;
+    border: none !important;
+    color: #fff !important;
+}
+
+.base:hover {
+    background: rgb(96, 165, 250);
+    background: linear-gradient(45deg, rgba(96, 165, 250, 1) 0%, rgba(37, 99, 235, 1) 100%);
+    color: #fff !important;
+}
+
+.cancelOTP {
+    color: #3b82f6
+}
