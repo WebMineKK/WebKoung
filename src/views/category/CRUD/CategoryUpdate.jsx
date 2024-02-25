@@ -2,12 +2,12 @@ import React, { useEffect, useState } from 'react';
 import { Button, Input, InputNumber, Modal, Radio, Select, notification, Upload } from 'antd';
 import classes from '../../../components/style/LayoutStyle.module.css'
 import classesbtn from '../../../components/style/ButtonStyle.module.css'
-import { myAPI } from '../../../middleware/api';
-import { USER_KEY } from '../../../middleware/userKey';
+import { myAPI } from '../../../middleware/api.jsx';
+import { USER_KEY } from '../../../middleware/userKey.jsx';
 import { useHistory } from 'react-router-dom';
 import { X, ImagePlus } from 'lucide-react';
 import { UploadOutlined } from '@ant-design/icons';
-import { alertSuccess } from '../../../components/notification/Notification'
+import { alertSuccess } from '../../../components/notification/Notification.jsx'
 
 function CategoryUpdate({ dataValue, use, cbuse, result, cbresult }) {
     const userToken = JSON.parse(localStorage.getItem(USER_KEY))

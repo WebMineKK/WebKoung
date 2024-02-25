@@ -1,26 +1,26 @@
 import React, { useEffect, useState } from 'react';
 import { Modal } from 'antd'
-import { USER_KEY } from '../../../middleware/userKey';
-import { myAPI } from '../../../middleware/api';
-import { alertSuccess } from '../../../components/notification/Notification'
+import { alertSuccess } from '../../../components/notification/Notification.jsx'
+import { postDeleteProduct } from '../../../middleware/ProductAPI.jsx';
 
 function ProductDelete({ dataValue, use, close, result, cbresult }) {
-  const userToken = JSON.parse(localStorage.getItem(USER_KEY))
   const { pro_id } = dataValue
 
-  const handleDeleteProduct = () => {
+  const handleDeleteProduct = async () => {
     let sendData = { id: pro_id }
-    myAPI.post('dl_product', sendData, {
-      headers: { 'Authorization': `Bearer ${userToken?.token}` }
-    }).then((res) => {
-      if (res?.status === 200) {
-        alertSuccess({ title: 'ລືບສິນຄ້າສຳເລັດ', label: 'ລືບຂໍ້ມູນສິນຄ້າອອກຈາກລະບົບສຳເລັດແລ້ວ.' })
-        cbresult(!result)
-        close(!use)
-      } else {
-        console.log('Failed')
+    try {
+      const { data } = await postDeleteProduct({ senddata: sendData })
+      // console.log(data)
+      if (data?.status === 200) {
+        setTimeout(() => {
+          alertSuccess({ title: 'ລືບສິນຄ້າສຳເລັດ', label: 'ລືບຂໍ້ມູນສິນຄ້າອອກຈາກລະບົບສຳເລັດແລ້ວ.' })
+          cbresult(!result)
+          close(!use)
+        }, 200);
       }
-    }).catch(e => console.error(e))
+    } catch (error) {
+      throw new Error('Failed to post API request:', error);
+    }
   }
 
   return (

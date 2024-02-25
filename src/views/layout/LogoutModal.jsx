@@ -1,7 +1,7 @@
 import { Modal } from 'antd';
 import React from 'react'
 import { useHistory } from 'react-router-dom';
-import { USER_KEY } from '../../middleware/userKey';
+import { USER_KEY } from '../../middleware/userKey.jsx';
 
 
 function LogoutModal({ isOpen, isCancel }) {

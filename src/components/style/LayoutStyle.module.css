@@ -12,6 +12,54 @@
     border-radius: .5rem;
 }
 
+.contentnopad {
+    border: 1px solid #ddd;
+    /* margin: 1.5rem 1rem; */
+    padding: .6rem 1rem;
+    background-color: #fff;
+    border-radius: .5rem;
+}
+
+.carimg {
+    border: 1px solid #ddd;
+    transition: transform .2s;
+    background-color: #fff;
+    border-radius: .5rem;
+}
+
+.carimg p {
+    font-size: .75rem;
+    padding: .2rem .5rem;
+}
+
+.carimg:hover {
+    -ms-transform: scale(1.02);
+    /* IE 9 */
+    -webkit-transform: scale(1.02);
+    /* Safari 3-8 */
+    transform: scale(1.02);
+}
+
+.pnopad {
+    font-weight: 400;
+    /* color: #777; */
+}
+
+.headernopad {
+    font-size: 1.125rem;
+    font-weight: bold;
+}
+
+.contentnocolor {
+    /* border: 1px solid #2563EB; */
+    margin: 1.5rem 1rem;
+    padding: 1.5rem;
+    border-radius: .5rem;
+    background-color: #051441;
+    /* opacity: 0.5; */
+    background: repeating-linear-gradient(-45deg, #041139, #041139 8px, #0a1d59 5px, #0a1d59 25px);
+}
+
 .silde {
     border: 1px solid #ddd;
     margin-top: .7rem;

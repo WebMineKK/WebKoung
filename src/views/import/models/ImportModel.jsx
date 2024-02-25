@@ -6,6 +6,9 @@ class ImportModel {
         this.total_price = '';
         this.company_name = '';
         this.bill_no = '';
+        this.bill_sell = '';
+        this.delivery_by = '';
+        this.tax = '';
         this.note = '';
     }
 }

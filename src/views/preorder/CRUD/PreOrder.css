@@ -1,0 +1,121 @@
+.preordertable {
+    width: 100% !important;
+}
+
+.preordertable .th {
+    border: 1px solid #ddd;
+    font-size: .875rem;
+    color: #1F2426;
+    background: #f1f1f1;
+    font-weight: 600;
+    padding-top: .5rem;
+    padding-bottom: .5rem;
+    padding-left: .75rem;
+    padding-right: .75rem;
+    text-align: left;
+}
+
+.preordertable .tbody {
+    display: block;
+    height: 25rem !important;
+    overflow: auto;
+    width: 100% !important;
+}
+
+.preordertable .thead,
+.tbody .tr {
+    display: table;
+    width: 100% !important;
+    table-layout: fixed;
+}
+
+.preordertable .tr,
+.td {
+    font-size: .875rem;
+    color: #1F2426;
+    padding: .2rem .7rem;
+
+}
+
+.preordertable th:nth-child(1) {
+    width: 13% !important;
+}
+
+.preordertable td:nth-child(1) {
+    width: 13% !important;
+    text-align: left !important;
+}
+
+.preordertable th:nth-child(2) {
+    width: 30% !important;
+}
+
+.preordertable td:nth-child(2) {
+    width: 30% !important;
+    text-align: left !important;
+}
+
+.preordertable th:nth-child(3) {
+    width: 12% !important;
+}
+
+.preordertable td:nth-child(3) {
+    width: 12% !important;
+}
+
+.preordertable th:nth-child(4) {
+    width: 16% !important;
+}
+
+.preordertable td:nth-child(4) {
+    width: 16% !important;
+}
+
+.preordertable th:nth-child(5) {
+    width: 11% !important;
+}
+
+.preordertable td:nth-child(5) {
+    width: 11% !important;
+}
+
+.preordertable th:nth-child(6) {
+    width: 10% !important;
+}
+
+.preordertable td:nth-child(6) {
+    width: 10% !important;
+}
+
+.preordertable th:nth-child(n+3) {
+    text-align: right !important;
+}
+
+.preordertable th:nth-child(3) {
+    background: #86efac !important;
+}
+
+.preordertable th:nth-child(4) {
+    background: #93c5fd !important;
+}
+
+.preordertable th:nth-child(5) {
+    background: #5eead4 !important;
+}
+
+.preordertable td:nth-child(3) {
+    background: #dcfce7 !important;
+}
+
+.preordertable td:nth-child(4) {
+    background: #dbeafe !important;
+}
+
+.preordertable td:nth-child(5) {
+    background: #ccfbf1 !important;
+}
+
+.preordertable,
+th:nth-child(7) {
+    text-align: center !important;
+}

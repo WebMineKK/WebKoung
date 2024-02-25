@@ -2,17 +2,15 @@ import React, { useEffect, useState, Fragment } from 'react';
 import { Button, Input, Space, Table, Tag } from 'antd';
 import classes from '../../components/style/LayoutStyle.module.css'
 import classesbtn from '../../components/style/ButtonStyle.module.css'
-import { loadDataCategory } from '../../middleware/LoadData'
-import { USER_KEY } from '../../middleware/userKey';
+import { loadDataCategory } from '../../middleware/CategoryAPI.jsx'
 import { FilePen, Trash, Loader } from 'lucide-react';
 import { CheckCircleOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
-import CategoryCreate from './CRUD/CategoryCreate';
-import CategoryDelete from './CRUD/CategoryDelete';
-import CategoryUpdate from './CRUD/CategoryUpdate';
+import CategoryCreate from './CRUD/CategoryCreate.jsx';
+import CategoryDelete from './CRUD/CategoryDelete.jsx';
+import CategoryUpdate from './CRUD/CategoryUpdate.jsx';
 
 
 function CategoryHome() {
-    const userToken = JSON.parse(localStorage.getItem(USER_KEY))
     const [openStatus, setOpenStatus] = useState({ create: false, update: false, delete: false });
     const [checkResult, setCheckResult] = useState({ create: false, update: false, delete: false });
     const { Search } = Input
@@ -31,11 +29,11 @@ function CategoryHome() {
         const fetchData = async () => {
             setLoading(true)
             try {
-                const { data } = await loadDataCategory(userToken?.token);
+                const { data } = await loadDataCategory()
                 setTimeout(() => {
-                    setListData(data?.data);
-                    setLoading(false);
-                }, 300);
+                    setListData(data?.data)
+                    setLoading(false)
+                }, 300)
             } catch (error) {
                 // Handle errors
                 console.error(error);
@@ -146,23 +144,26 @@ function CategoryHome() {
                         />
                     </div>
                 </div>
-                <div className={openStatus.create ? `block` : `hidden`}>
-                    <CategoryCreate
+                {
+                    openStatus.create ? <CategoryCreate
                         use={openStatus.create}
                         cbuse={(x) => { setOpenStatus({ ...openStatus, create: x }) }}
                         result={checkResult.create}
                         cbresult={(y) => { setCheckResult({ ...checkResult, create: y }) }}
                     />
-                </div>
-                <div className={openStatus.update ? `block` : `hidden`}>
-                    <CategoryUpdate
-                        use={openStatus.update}
-                        cbuse={(x) => { setOpenStatus({ ...openStatus, update: x }) }}
-                        dataValue={findDataUpdate}
-                        result={checkResult.update}
-                        cbresult={(y) => { setCheckResult({ ...checkResult, update: y }) }}
-                    />
-                </div>
+                        : <></>
+                }
+                {
+                    openStatus.update
+                        ? <CategoryUpdate
+                            use={openStatus.update}
+                            cbuse={(x) => { setOpenStatus({ ...openStatus, update: x }) }}
+                            dataValue={findDataUpdate}
+                            result={checkResult.update}
+                            cbresult={(y) => { setCheckResult({ ...checkResult, update: y }) }}
+                        />
+                        : <></>
+                }
             </div>
             <CategoryDelete
                 use={openStatus.delete}

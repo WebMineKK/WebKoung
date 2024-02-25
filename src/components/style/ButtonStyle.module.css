@@ -15,3 +15,29 @@
 .cancelOTP {
     color: #3b82f6
 }
+
+.transaction {
+    box-shadow: none !important;
+    background-color: #16a34a !important;
+    border: none !important;
+    color: #fff !important;
+}
+
+.transaction:hover {
+    background: rgb(74, 222, 128) !important;
+    background: linear-gradient(90deg, rgba(74, 222, 128, 1) 0%, rgba(22, 163, 74, 1) 100%) !important;
+    color: #fff !important;
+}
+
+.close {
+    box-shadow: none !important;
+    background-color: #9ca3af !important;
+    border: none !important;
+    color: #fff !important;
+}
+
+.close:hover {
+    background: rgb(94, 234, 212);
+    background: linear-gradient(90deg, rgba(94, 234, 212, 1) 0%, rgba(20, 184, 166, 1) 100%);
+    color: #fff !important;
+}

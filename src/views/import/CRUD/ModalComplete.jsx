@@ -15,12 +15,13 @@ function ModalComplete({ open, close, label, icon, header }) {
             open={open}
             okButtonProps={{ className: 'base w-[6.25rem]' }}
             cancelButtonProps={{ className: 'w-[6.25rem]' }}
-            onOk={() => history.push(`/home/import`)}
+            onOk={() => window.location.reload()}
             onCancel={() => {
                 close(!open)
+                history.push(`/home/import`)
             }}
-            okText={<p >ຕົກລົງ</p>}
-            cancelText={<p >ປິດ</p>}
+            okText={<p >ສ້າງລາຍການໃໝ່</p>}
+            cancelText={<p >ປິດ, ກັບຄືນ</p>}
             footer={(_, { OkBtn, CancelBtn }) => (
                 <div className='flex justify-center'>
                     <CancelBtn />

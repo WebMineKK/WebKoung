@@ -1,21 +1,21 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Noto+Sans+Lao:wght@400;500;600;700&display=swap');
 
 * {
-  box-sizing: border-box;
-  font-family: 'Noto Sans Lao', system-ui, 'Inter', sans-serif !important;
+    box-sizing: border-box;
+    font-family: 'Noto Sans Lao', system-ui, 'Inter', sans-serif !important;
 }
 
 :root {
-  background-color: #f5f5f5;
-  font-size: 1rem;
-  color: #1F2426;
+    background-color: #f5f5f5;
+    font-size: 1rem;
+    color: #1F2426;
 }
 
 
 body {
-  /* font-family: 'Noto Sans Lao', system-ui, 'Inter', sans-serif !important; */
-  margin: 0;
-  color: #1F2426;
+    /* font-family: 'Noto Sans Lao', system-ui, 'Inter', sans-serif !important; */
+    margin: 0;
+    color: #1F2426;
 }
 
 @tailwind base;

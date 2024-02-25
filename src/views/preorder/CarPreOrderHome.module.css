@@ -1,0 +1,21 @@
+.card {
+    transition: background-color 2s ease-out 100ms;
+    animation-duration: .75ms;
+}
+
+.card:hover {
+    background: rgb(37, 99, 235);
+    background: linear-gradient(90deg, rgba(37, 99, 235, 1) 0%, rgba(197, 210, 251, 1) 100%);
+    color: #fff !important;
+}
+
+.myInputNumBlack input {
+    letter-spacing: 0.025rem !important;
+    padding: 0 !important;
+    text-align: left !important;
+    font-size: 1rem !important;
+}
+
+.card:hover .myInputNumBlack input {
+    color: #fff !important;
+}

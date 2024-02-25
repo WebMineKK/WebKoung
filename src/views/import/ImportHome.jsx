@@ -3,51 +3,47 @@ import React, { useEffect, useState } from 'react';
 import { Button, Input, Radio, Space, Table, Tag, theme } from 'antd';
 import classes from '../../components/style/LayoutStyle.module.css'
 import classesbtn from '../../components/style/ButtonStyle.module.css'
-import { myAPI } from '../../middleware/api';
-import { loadDataImport } from './LoadData'
-import { USER_KEY } from '../../middleware/userKey';
 import { useHistory } from 'react-router-dom';
 import moment from 'moment/moment';
+import { queryDataImport } from '../../middleware/ImportAPI';
+import { Loader, Truck, Copy, FileText, FileX } from 'lucide-react';
 
 function ImportHome() {
-    const userToken = JSON.parse(localStorage.getItem(USER_KEY));
 
     let history = useHistory()
     const { Search } = Input
 
     const [top, setTop] = useState('topRight');
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(false)
 
-    const [currentPage, setcurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState(10)
     const [totalItems, setTotalItems] = useState(1)
+    const [isOpen, setIsOpen] = useState({ cancel: false })
 
-    const [listData, setListData] = useState([]);
+    const [listData, setListData] = useState([])
+    const [findDataUpdate, setFindDataUpdate] = useState([])
 
+    const fetchData = async (page) => {
+        try {
+            const { data, total } = await queryDataImport(page, pageSize)
+            setListData(data)
+            setTotalItems(total)
+            setLoading(false)
+        } catch (error) {
+            console.error(error)
+        }
+    };
     useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const { data, total } = await loadDataImport(currentPage, pageSize, userToken?.token);
-                // console.log(data);
-                setListData(data);
-                setTotalItems(total);
-                setLoading(false);
-            } catch (error) {
-                // Handle errors
-                console.error(error);
-            }
-        };
-
-        fetchData()
-
-    }, []);
+        fetchData(1)
+    }, [])
 
     const columns = [
         {
             title: 'ວັນທີ',
             dataIndex: 'im_date',
             key: 'im_date',
-            render: (text) => <p>{moment(text).format('DD-MM-YYYY')}</p>,
+            render: (text) => <p>{moment(text).format('DD-MM-YYYY HH:mm')}</p>,
+            width: 160
         },
         {
             title: 'ເລກໃບບິນ',
@@ -77,13 +73,28 @@ function ImportHome() {
             title: 'ຈັດການ',
             key: 'action',
             render: (_, record) => (
-                <Space size="middle">
-                    <a>Invite {record.name}</a>
-                    <a>Delete</a>
+                <Space size='small' align="center">
+                    <Button onClick={() => history.push({ pathname: '/home/import/view', state: { data: record } })}
+                        className='px-1 shadow-none border-none text-sm'>ເບິ່ງຂໍ້ມູນ</Button>
+                    <Button onClick={() => {
+                        // setFindDataUpdate(record)
+                        // setOpenStatus({ delete: true })
+                    }}
+                        className='px-1 shadow-none border-none text-sm'>ກ໋ອບປີ</Button>
+                    <Button
+                        onClick={() => {
+                            setFindDataUpdate(record)
+                            // setIsOpen({ packing: true })
+                        }}
+                        className={`px-1 shadow-none border-none text-sm`}>
+                        ຍົກເລີກ
+                    </Button>
                 </Space>
             ),
+            width: 100,
+            align: 'center'
         },
-    ];
+    ]
 
 
     return (
@@ -116,7 +127,7 @@ function ImportHome() {
                         total: totalItems,
                         showSizeChanger: true,
                         onChange: (page) => {
-                            loadData(page)
+                            fetchData(page)
                         }
                     }}
                     dataSource={listData?.data}

@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { useHistory } from 'react-router-dom';
 import { Input, Button } from 'antd';
-import SubmitForm from './SubmitForm';
+import SubmitForm from './SubmitForm.jsx';
 
 function FormLogin() {
 

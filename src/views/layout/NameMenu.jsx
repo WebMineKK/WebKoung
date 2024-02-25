@@ -1,14 +1,4 @@
-import {
-    AppstoreOutlined,
-    ContainerOutlined,
-    DesktopOutlined,
-    MailOutlined,
-    MenuFoldOutlined,
-    MenuUnfoldOutlined,
-    PieChartOutlined,
-} from '@ant-design/icons';
-
-import { Truck, BarChartHorizontal, BellElectric, LayoutDashboard, Shapes, TableProperties, PackagePlus, Gem, Users, ClipboardX } from 'lucide-react';
+import { Truck, BarChartHorizontal, LayoutDashboard, Shapes, PackagePlus, Gem, Users, ClipboardX } from 'lucide-react';
 
 const NameMenu = [
     {
@@ -22,20 +12,20 @@ const NameMenu = [
         icon: <PackagePlus size={20} />,
     },
     {
-        label: 'ເບີກສິນຄ້າ',
+        label: 'ເບີກ ແລະ ຈັດສົ່ງ',
         key: 'preorder',
-        icon: <TableProperties size={20} />,
+        icon: <Truck size={20} />,
     },
     {
         label: 'ຄັງສິນຄ້າ',
         key: 'product',
         icon: <Gem size={20} />,
     },
-    {
-        label: 'ຈັດສົ່ງ',
-        key: 'delivery',
-        icon: <Truck size={20} />,
-    },
+    // {
+    //     label: 'ຈັດສົ່ງ',
+    //     key: 'delivery',
+    //     icon: <Truck size={20} />,
+    // },
     {
         label: 'ສິນຄ້າເສຍ',
         key: 'getback',

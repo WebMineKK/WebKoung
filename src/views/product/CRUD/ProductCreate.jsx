@@ -2,29 +2,26 @@ import React, { useEffect, useState } from 'react';
 import { Button, Input, InputNumber, Modal, Radio, Select, notification, Upload } from 'antd';
 import classes from '../../../components/style/LayoutStyle.module.css'
 import classesbtn from '../../../components/style/ButtonStyle.module.css'
-import { myAPI } from '../../../middleware/api';
-import { USER_KEY } from '../../../middleware/userKey';
-import { useHistory } from 'react-router-dom';
+import { myAPI } from '../../../middleware/api.jsx';
+import { USER_KEY } from '../../../middleware/userKey.jsx';
 import { X, ImagePlus } from 'lucide-react';
-import { loadDataCategory } from '../../../middleware/LoadData'
-import ProductModel from '../model/ProductModel';
-import { UploadOutlined } from '@ant-design/icons';
-import { alertSuccess } from '../../../components/notification/Notification'
+import { postCreateProduct } from '../../../middleware/ProductAPI.jsx'
+import ProductModel from '../model/ProductModel.jsx';
+import { alertSuccess } from '../../../components/notification/Notification.jsx'
+import { loadDataCategory } from '../../../middleware/CategoryAPI.jsx';
 
 
 function ProductCreate({ use, cbuse, result, cbresult }) {
-    const userToken = JSON.parse(localStorage.getItem(USER_KEY))
     const [modelProduct, setModelProduct] = useState(new ProductModel())
-    const { name, price, barcode, unit } = modelProduct
+    const { name, price, barcode, unit, price_sell } = modelProduct
 
     const [listDataCategory, setListDataCategory] = useState([])
-    const [loading, setLoading] = useState(false);
-    const [checkReuslt, setCheckReuslt] = useState(false);
+    const [loading, setLoading] = useState(false)
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const { data } = await loadDataCategory(userToken?.token);
+                const { data } = await loadDataCategory();
                 let update = data?.data?.map((x) => ({
                     value: x.cate_id,
                     label: x.cate_name
@@ -39,8 +36,6 @@ function ProductCreate({ use, cbuse, result, cbresult }) {
 
         fetchData()
     }, []);
-
-    const [previewImage, setPreviewImage] = useState('');
 
     const [imageProduct, setImageProduct] = useState('');
 
@@ -68,28 +63,35 @@ function ProductCreate({ use, cbuse, result, cbresult }) {
         setSelectDefult(val)
     }
 
-    const handleCreateProduct = () => {
+    const [selectProtype, setSelectProtype] = useState('GLASS');
+    const handleSelectProtype = (e) => {
+        setSelectProtype(e)
+    }
+
+    const handleCreateProduct = async () => {
         let sendData = {
             name: name,
             img: imageProduct,
             price: price,
             unit: unit,
             cate_id: selectDefult,
-            barcode: barcode
+            barcode: barcode,
+            pro_type: selectProtype,
+            price_sell: price_sell
         }
-        myAPI.post('product', sendData, {
-            headers: {
-                'Authorization': `Bearer ${userToken?.token}`
-            }
-        }).then((res) => {
-            if (res?.status === 200) {
+
+        try {
+            const { data } = await postCreateProduct({ senddata: sendData })
+            console.log(data)
+            setTimeout(() => {
                 alertSuccess({ title: 'ສຳເລັດ', label: 'ບັນທຶກຂໍ້ມູນສິນຄ້າໃໝ່ເຂົ້າລະບົບສຳເລັດແລ້ວ.' })
-                setModelProduct({ price: 0, unit: 0 })
+                setModelProduct({ price: 0, unit: 0, price_sell: 0 })
+                cbuse(!use)
                 cbresult(!result)
-            } else {
-                console.log('Failed')
-            }
-        }).catch(e => console.error(e))
+            }, 200);
+        } catch (error) {
+            throw new Error('Failed to post API request:', error);
+        }
     }
 
 
@@ -145,6 +147,15 @@ function ProductCreate({ use, cbuse, result, cbresult }) {
                             ລາຄາຂາຍ
                         </p>
                         <InputNumber
+                            value={price_sell}
+                            min={1} defaultValue={0} autoComplete={false} size='middle' className='w-full'
+                            onChange={(e) => setModelProduct({ ...modelProduct, price_sell: e })} />
+                    </div>
+                    <div>
+                        <p className="text-md mb-1.5 font-medium">
+                            ລາຄານຳເຂົ້າ
+                        </p>
+                        <InputNumber
                             value={price}
                             min={1} defaultValue={0} autoComplete={false} size='middle' className='w-full'
                             onChange={(e) => setModelProduct({ ...modelProduct, price: e })} />
@@ -164,9 +175,9 @@ function ProductCreate({ use, cbuse, result, cbresult }) {
                         </p>
                         <Select
                             className='w-full'
-                            placeholder='ເລືອກ'
-                            onChange
-                            defaultValue={'GLASS'}
+                            // placeholder='ເລືອກ'
+                            onChange={handleSelectProtype}
+                            defaultValue={selectProtype}
                             options={[
                                 {
                                     value: 'GLASS',

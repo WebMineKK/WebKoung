@@ -2,22 +2,21 @@ import React, { useEffect, useState } from 'react';
 import { Button, Input, InputNumber, Modal, Radio, Select, notification, Upload } from 'antd';
 import classes from '../../../components/style/LayoutStyle.module.css'
 import classesbtn from '../../../components/style/ButtonStyle.module.css'
-import { myAPI } from '../../../middleware/api';
-import { USER_KEY } from '../../../middleware/userKey';
+import { myAPI } from '../../../middleware/api.jsx';
+import { USER_KEY } from '../../../middleware/userKey.jsx';
 import { useHistory } from 'react-router-dom';
 import { X, ImagePlus } from 'lucide-react';
 import { UploadOutlined } from '@ant-design/icons';
-import { alertSuccess } from '../../../components/notification/Notification'
-import { loadDataCategory } from '../../../middleware/LoadData'
+import { alertSuccess } from '../../../components/notification/Notification.jsx'
+import { loadDataCategory } from '../../../middleware/CategoryAPI.jsx'
+import { putUpdateProduct } from '../../../middleware/ProductAPI.jsx';
 
 
 function ProductUpdate({ dataValue, use, cbuse, result, cbresult }) {
-    const userToken = JSON.parse(localStorage.getItem(USER_KEY))
-
     const [listDataCategory, setListDataCategory] = useState([])
 
     const [dataOld, setDataOld] = useState(dataValue)
-    const { pro_barcode, pro_name, pro_price, pro_unit, pro_img, pro_status, cate_id } = dataOld
+    const { pro_id, pro_barcode, pro_name, pro_price, pro_unit, pro_img, pro_status, pro_type, cate_id, price_sell } = dataOld
 
     useEffect(() => {
         setDataOld(dataValue)
@@ -26,7 +25,7 @@ function ProductUpdate({ dataValue, use, cbuse, result, cbresult }) {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const { data } = await loadDataCategory(userToken?.token);
+                const { data } = await loadDataCategory();
                 let update = data?.data?.map((x) => ({
                     value: x.cate_id,
                     label: x.cate_name
@@ -71,13 +70,19 @@ function ProductUpdate({ dataValue, use, cbuse, result, cbresult }) {
         setCatetoryType(e)
     }
 
+    const [proType, setProType] = useState(pro_type);
+    const handleChangeProType = (e) => {
+        setProType(e)
+    }
+
     useEffect(() => {
         setProStatus(pro_status)
         setCatetoryType(cate_id)
         setImageProduct(pro_img)
-    }, [pro_status, cate_id, pro_img])
+        setProType(pro_type)
+    }, [pro_status, cate_id, pro_img, pro_type])
 
-    const handleUpdateProduct = () => {
+    const handleUpdateProduct = async () => {
         let sendData = {
             id: pro_id,
             name: pro_name,
@@ -86,21 +91,22 @@ function ProductUpdate({ dataValue, use, cbuse, result, cbresult }) {
             unit: pro_unit,
             cate_id: catetoryType[0],
             barcode: pro_barcode,
-            status: proStatus
+            status: proStatus,
+            pro_type: proType,
+            price_sell: price_sell
         }
-        // console.log(sendData);
-        myAPI.put('product', sendData, {
-            headers: {
-                'Authorization': `Bearer ${userToken?.token}`
-            }
-        }).then((res) => {
-            if (res?.status === 200) {
+
+        try {
+            const { data } = await putUpdateProduct({ senddata: sendData })
+            console.log(data)
+            setTimeout(() => {
                 alertSuccess({ title: 'ແກ້ໄຂສຳເລັດ', label: 'ແກ້ໄຂຂໍ້ມູນສິນຄ້າໃໝ່ໃນລະບົບສຳເລັດແລ້ວ.' })
+                cbuse(!use)
                 cbresult(!result)
-            } else {
-                console.log('Failed')
-            }
-        }).catch(e => console.error(e))
+            }, 200);
+        } catch (error) {
+            throw new Error('Failed to post API request:', error);
+        }
     }
 
     return (
@@ -153,6 +159,15 @@ function ProductUpdate({ dataValue, use, cbuse, result, cbresult }) {
                             ລາຄາຂາຍ
                         </p>
                         <InputNumber
+                            value={price_sell}
+                            min={1} defaultValue={0} autoComplete={false} size='middle' className='w-full'
+                            onChange={(e) => setDataOld({ ...dataOld, price_sell: e })} />
+                    </div>
+                    <div>
+                        <p className="text-md mb-1.5 font-medium">
+                            ລາຄາຂາຍ
+                        </p>
+                        <InputNumber
                             value={pro_price}
                             min={1} defaultValue={0} autoComplete={false} size='middle' className='w-full'
                             onChange={(e) => setDataOld({ ...dataOld, pro_price: e })} />
@@ -186,9 +201,8 @@ function ProductUpdate({ dataValue, use, cbuse, result, cbresult }) {
                         </p>
                         <Select
                             className='w-full'
-                            placeholder='ເລືອກ'
-                            onChange
-                            defaultValue={'GLASS'}
+                            onChange={handleChangeProType}
+                            value={proType}
                             options={[
                                 {
                                     value: 'GLASS',

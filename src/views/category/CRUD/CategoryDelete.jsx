@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Modal } from 'antd'
-import { USER_KEY } from '../../../middleware/userKey';
-import { myAPI } from '../../../middleware/api';
-import { alertSuccess } from '../../../components/notification/Notification'
+import { USER_KEY } from '../../../middleware/userKey.jsx';
+import { myAPI } from '../../../middleware/api.jsx';
+import { alertSuccess } from '../../../components/notification/Notification.jsx'
 
 function CategoryDelete({ dataValue, use, close, result, cbresult }) {
     const userToken = JSON.parse(localStorage.getItem(USER_KEY))

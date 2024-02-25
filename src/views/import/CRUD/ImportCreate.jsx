@@ -1,44 +1,50 @@
 import React, { useEffect, useState } from 'react';
-import { Button, Input, InputNumber, Radio, Select, Space, Table, Tag, Upload, theme } from 'antd';
+import { Button, Input, Select, Upload } from 'antd';
 import classes from '../../../components/style/LayoutStyle.module.css'
 import classesbtn from '../../../components/style/ButtonStyle.module.css'
-import { myAPI } from '../../../middleware/api';
-import { USER_KEY } from '../../../middleware/userKey';
-import { useHistory } from 'react-router-dom';
-import { loadDataProduct } from '../../product/LoadData';
+import { myAPI } from '../../../middleware/api.jsx';
+import { loadDataProduct } from '../../../middleware/ProductAPI.jsx';
 import classestable from '../../../components/style/Table.module.css'
 import { NumericFormat } from 'react-number-format';
 import ImportModel from '../models/ImportModel';
 import { UploadOutlined } from '@ant-design/icons';
-import ModalComplete from './ModalComplete';
+import ModalComplete from './ModalComplete.jsx';
+import { alertError, alertWarning } from '../../../components/notification/Notification.jsx';
+import { postCreateImport } from '../../../middleware/ImportAPI.jsx';
+import { postUploadImage } from '../../../middleware/UploadImageAPI.jsx';
+import { MyToken } from '../../../middleware/LoginAPI.jsx';
+
 
 function ImportCreate() {
-    const { TextArea } = Input;
-    let history = useHistory()
+    const userToken = MyToken()
+    const { TextArea } = Input
 
-    const userAuth = JSON.parse(localStorage.getItem(USER_KEY))
-    const userToken = userAuth.token
 
     const [modelImport, setModelImport] = useState(new ImportModel())
+    const { company_name, bill_no, bill_sell, delivery_by, note, regis } = modelImport
+
     const [isOpen, setIsOpen] = useState({ complete: false })
 
-    const [loading, setLoading] = useState(false)
     const [dataProduct, setDataProduct] = useState([])
-    const [totalAmount, setTotalAmount] = useState(0)
-    const [discountAll, setDiscountAll] = useState(0)
-    const [totalAll, setTotalAll] = useState(0)
 
     const [fileList, setFileList] = useState([])
-    const [giveImage, setGiveImage] = useState()
-    const [importData, setimportData] = useState([])
+    const [giveImage, setGiveImage] = useState('')
+    const [btn, setbtn] = useState(false)
+
+    const [validation, setValidation] = useState({
+        companyname: false,
+        billno: false,
+        billsell: false,
+        deliveryby: false
+    });
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const { data } = await loadDataProduct(userToken)
+                const { data } = await loadDataProduct({ page: 1, limit: 200 })
                 let update = data?.map((x) => ({
                     value: x.pro_id,
-                    label: x.pro_name + ' ' + x.pro_barcode,
+                    label: x.pro_name,
                     unit: x.pro_unit,
                     barcode: x.pro_barcode,
                     status: false,
@@ -50,7 +56,6 @@ function ImportCreate() {
                 }))
                 setDataProduct(update)
                 // console.log(update)
-                setLoading(false)
             } catch (error) {
                 // Handle errors
                 console.error(error)
@@ -65,18 +70,15 @@ function ImportCreate() {
             if (row.value === val) {
                 row.status = true
                 row.qty = 1
-                row.my_qty = 0
-                row.my_price = 0
-                row.my_discount = 0
-                row.my_total = 0
+                row.price = 0
+                row.tax = 0
+                row.type = 'CASE/CRATE'
             }
             return row
         })
 
         setDataProduct(update)
     }
-
-    const [inputTax, setInputTax] = useState(0)
 
     const hanldeRemoveProduct = (val) => {
         let update = dataProduct.map((row) => {
@@ -86,87 +88,13 @@ function ImportCreate() {
                 row.qty = 0
                 row.price = 0
                 row.discount = 0
+                row.tax = 0
+                row.type = 'CASE/CRATE'
             }
             return row
         })
 
         setDataProduct(update)
-    }
-
-
-    const handleGetAllInput = ({ val, type, row }) => {
-        let update = dataProduct.map(r => {
-            if (r !== undefined) {
-                if (r.value === row.value) {
-                    if (type === 'qty') {
-                        r.my_qty = parseInt(val)
-                    }
-                    if (type === 'price') {
-                        r.my_price = parseInt(val)
-                    }
-                    if (type === 'discount') {
-                        r.my_discount = parseInt(val)
-                    }
-                    return r
-                }
-            }
-        })
-        setDataProduct(update)
-        // console.log(update);
-        // let oldData = dataProduct
-        // let update = oldData.filter(r => r.value === row.value)
-        // console.log(update);
-        // if (update.length > 0) {
-        //     let updated
-        //     if (type === 'qty') {
-        //         updated = oldData.map((r) => {
-        //             if (r.value === row.value) {
-        //                 r.my_qty = parseInt(val)
-        //             }
-        //         })
-        //     }
-        //     else if (type === 'price') {
-        //         updated = oldData.map((r) => {
-        //             if (r.value === row.value) {
-        //                 r.my_price = parseInt(val)
-        //             }
-        //         })
-        //     }
-        //     else if (type === 'discount') {
-        //         updated = oldData.map((r) => {
-        //             if (r.value === row.value) {
-        //                 r.my_discount = parseInt(val)
-        //             }
-        //         })
-        //     }
-        //     // if (update[0].my_qty !== undefined && update[0].my_price !== undefined) {
-        //     //     update = oldData.map((r) => {
-        //     //         if (r.value === row.value) {
-        //     //             r.my_total = parseInt(r.my_qty) * parseInt(r.my_price)
-        //     //         }
-        //     //     })
-        //     // }
-        //     // setDataProduct([...dataProduct, updated])
-        //     console.log(updated);
-        // }
-
-
-
-
-        // else {
-        //     console.log('br mi');
-        //     if (type === 'qty') {
-        //         row.my_qty = parseInt(val)
-        //     } else if (type === 'price') {
-        //         row.my_price = parseInt(val)
-        //     } else if (type === 'discount') {
-        //         row.my_discount = parseInt(val)
-        //     }
-        //     let arr = importData
-        //     arr.push(row)
-        //     setimportData(arr)
-        //     console.log(arr);
-        // }
     }
 
     const handleInputQty = (idx, qty, id) => {
@@ -187,6 +115,18 @@ function ImportCreate() {
         setDataProduct(newData)
     }
 
+    const handleInputTax = (idx, tax, id) => {
+        let newData = [...dataProduct]
+        newData[idx]['tax'] = parseInt(tax)
+        setDataProduct(newData)
+    }
+
+    const handleChangeType = (idx, e) => {
+        let newData = [...dataProduct]
+        newData[idx]['type'] = e
+        setDataProduct(newData)
+    }
+
     function totalAmountPrice() {
         let data = dataProduct.filter((x) => x.status === true).map((x) => {
             x.total = x.qty * x.price
@@ -202,26 +142,15 @@ function ImportCreate() {
         return dis
     }
 
+    function totalTax() {
+        let data = dataProduct.filter((x) => x.status === true)
+        let tax = data.reduce((tax, currentValue) => tax = tax + currentValue.tax, 0)
+        return tax
+    }
+
     function totalPriceAll() {
-        let summary = totalAmountPrice() - totalDiscountPrice()
+        let summary = totalDiscountPrice() + totalTax() + totalAmountPrice()
         return summary
-    }
-
-
-    const handleInputTax = (e) => {
-        setInputTax(e.target.value)
-    }
-
-    function totalWithTax() {
-
-        if (inputTax !== 0) {
-            let sum = totalPriceAll() + parseInt(inputTax)
-            // console.log(sum);
-            return sum
-        } else {
-            // console.log(totalPriceAll());
-            return totalPriceAll()
-        }
     }
 
     const props = {
@@ -234,16 +163,15 @@ function ImportCreate() {
         beforeUpload: (file) => {
             const formData = new FormData();
             formData.append('image', file);
-            const response = myAPI.post('upload-image', formData)
-                .then(response => {
-                    let images = giveImage ? giveImage + "," + response?.data?.image_url : response?.data?.image_url
-                    // console.log(images);
-                    setGiveImage(images)
-                })
-                .catch(error => {
-                    // Handle errors if any
-                    console.error(error);
-                });
+
+            postUploadImage(formData).then(response => {
+                // console.log(response?.data?.data);
+                let images = giveImage ? giveImage + "," + response?.data?.data?.image_url : response?.data?.image_url
+                // console.log(images);
+                setGiveImage(images)
+            }).catch(error => {
+                console.error(error);
+            });
 
             setFileList([...fileList, file]);
             return false;
@@ -252,39 +180,49 @@ function ImportCreate() {
     }
 
     const handleSubmitImport = async () => {
+        setbtn(true)
+
         let detailed = dataProduct.filter((x) => x.status === true).map((x) => {
             return {
                 pro_id: x.value,
                 pro_unit: x.qty,
                 pro_price: x.price,
-                total: x.total
+                pro_discount: x.discount,
+                pro_tax: x.tax,
+                pro_type: x.type
             }
         })
 
-        let sendData = {
-            u_id: userAuth.detail.u_id,
-            image: giveImage,
-            regis: modelImport.regis,
-            total_price: totalWithTax(),
-            company_name: modelImport.company_name,
-            bill_no: modelImport.bill_no,
-            note: modelImport.note,
-            import_detail: detailed
-        }
-        // console.log(sendData);
+        let listProduct = detailed.length > 0 ? '1' : ''
+        let checkData = { a: bill_no, b: bill_sell, c: company_name, d: listProduct }
+        let count = 0
 
-        myAPI.post('create_import', sendData, {
-            headers: {
-                'Authorization': `Bearer ${userToken}`
-            }
-        }).then((res) => {
-            if (res?.status === 200) {
-                setIsOpen({ complete: true })
-            } else {
-                console.log('Failed')
-            }
-        }).catch(e => console.error(e))
+        Object.keys(checkData).forEach(key => { if (checkData[key] === "" || checkData[key] === null) return count++ })
 
+        if (count === 0) {
+            let sendData = {
+                company_name: company_name,
+                bill_no: bill_no,
+                bill_sell: bill_sell,
+                delivery_by: delivery_by,
+                u_id: userToken?.detail?.u_id,
+                image: giveImage === "" ? "" : giveImage,
+                regis: regis,
+                total_price: totalPriceAll(),
+                total_discount: totalDiscountPrice(),
+                tax: totalTax(),
+                note: note,
+                import_detail: detailed
+            }
+
+            try {
+                const { data } = await postCreateImport({ senddata: sendData })
+                if (data.status === 200) return setIsOpen({ complete: true })
+                if (data.status === 299) return alertError({ title: 'ເກີດຂໍ້ຂັດຂ້ອງ!', label: 'ບໍ່ສາມາດນຳສິນຄ້າເຂົ້າສາງ, ກະລຸນາກວດສອບອີກຄັ້ງ.' })
+            } catch (error) {
+                throw new Error('Failed to post API request:', error)
+            }
+        } else alertWarning({ title: 'ບໍ່ສຳເລັດ!', label: 'ມີບາງຂໍ້ມູນບໍ່ຄົບຖ້ວນ, ກະລຸນາກວດສອບອີກຄັ້ງ.' })
     }
 
     return (
@@ -294,21 +232,61 @@ function ImportCreate() {
                 <div className='grid grid-cols-3 gap-5'>
                     <div className='col-span-2 bg-white border border-[#ddd] border-solid rounded-lg p-5'>
                         <h5 className='font-bold'>ຂໍ້ມູນບໍລິສັດ</h5>
-                        {/* <div className='mt-2'>
-                            <p className="text-md mb-1"> ວັນທີ: </p>
-                            <Input className='w-[250px]' autoComplete={false} size='middle' />
-                        </div> */}
-                        <div className='mt-2'>
-                            <p className="text-md mb-1"> ເລກທີໃບບີນ: </p>
-                            <Input className='w-[15.625rem]' autoComplete={false} size='middle' onChange={(e) => setModelImport({ ...modelImport, bill_no: e.target.value })} />
-                        </div>
-                        <div className='mt-2'>
-                            <p className="text-md mb-1"> ໝາຍເລກລົດຂົນສົ່ງ: </p>
-                            <Input className='w-[15.625rem]' autoComplete={false} size='middle' onChange={(e) => setModelImport({ ...modelImport, regis: e.target.value })} />
-                        </div>
-                        <div className='mt-2'>
-                            <p className="text-md mb-1"> ບໍລິສັດຂົ່ນສົ່ງ: </p>
-                            <Input className='w-[25rem]' autoComplete={false} size='middle' onChange={(e) => setModelImport({ ...modelImport, company_name: e.target.value })} />
+                        <div className='grid grid-cols-2 gap-x-10'>
+                            <div className='mt-2'>
+                                <p className="text-md mb-1">ໃບສັ່ງຊື້ເລກທີ:* </p>
+                                <Input
+                                    className='w-full'
+                                    value={bill_no}
+                                    size='middle'
+                                    onChange={(e) => {
+                                        setModelImport({ ...modelImport, bill_no: e.target.value })
+                                        setValidation({ ...validation, billno: e.target.value.length > 0 ? false : true })
+                                    }}
+                                    status={validation.billno || (bill_no === "" && btn) ? 'error' : null}
+                                />
+
+                            </div>
+                            <div className='mt-2'>
+                                <p className="text-md mb-1">ໃບສັ່ງຂາຍເລກທີ:* </p>
+                                <Input
+                                    className='w-full'
+                                    size='middle'
+                                    value={bill_sell}
+                                    onChange={(e) => {
+                                        setModelImport({ ...modelImport, bill_sell: e.target.value })
+                                        setValidation({ ...validation, billsell: e.target.value.length > 0 ? false : true })
+                                    }}
+                                    status={validation.billsell || (bill_sell === "" && btn) ? 'error' : null}
+                                />
+                            </div>
+                            <div className='mt-2'>
+                                <p className="text-md mb-1"> ຂົ່ນສົ່ງໂດຍບໍລິສັດ:* </p>
+                                <Input
+                                    className='w-full'
+                                    size='middle'
+                                    value={delivery_by}
+                                    onChange={(e) => setModelImport({ ...modelImport, delivery_by: e.target.value })}
+                                    status={validation.deliveryby || (delivery_by === "" && btn) ? 'error' : null}
+                                />
+                            </div>
+                            <div className='mt-2'>
+                                <p className="text-md mb-1"> ໝາຍເລກລົດຂົນສົ່ງ: </p>
+                                <Input className='w-full' size='middle' onChange={(e) => setModelImport({ ...modelImport, regis: e.target.value })} />
+                            </div>
+                            <div className='col-span-2 mt-2'>
+                                <p className="text-md mb-1"> ບໍລິສັດ: </p>
+                                <Input
+                                    className='w-full'
+                                    size='middle'
+                                    value={company_name}
+                                    onChange={(e) => {
+                                        setModelImport({ ...modelImport, company_name: e.target.value })
+                                        setValidation({ ...validation, companyname: e.target.value.length > 0 ? false : true })
+                                    }}
+                                    status={validation.companyname || (company_name === "" && btn) ? 'error' : null}
+                                />
+                            </div>
                         </div>
                     </div>
                     <div className='bg-white border border-[#ddd] border-solid rounded-lg p-5'>
@@ -349,10 +327,21 @@ function ImportCreate() {
                                 filterSort={(optionA, optionB) =>
                                     (optionA?.label ?? '').toLowerCase().localeCompare((optionB?.label ?? '').toLowerCase())
                                 }
-                                onChange={(value, option) => handleSelectProduct(value, option?.label)}
-                                options={dataProduct}
-
-                            />
+                                onChange={(value) => handleSelectProduct(value)}
+                                optionLabelProp="label"
+                            >
+                                {dataProduct.map((x) => (
+                                    <Select.Option
+                                        key={x.value}
+                                        value={x.value}
+                                        label={x.barcode + '' + x.label}
+                                    >
+                                        <span>
+                                            {x.label} <br /> <span className='font-bold text-xs'>{x.barcode}</span>
+                                        </span>
+                                    </Select.Option>
+                                ))}
+                            </Select>
                             <div className='mt-4'>
                                 <table className={classestable.importtable}>
                                     <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
@@ -363,7 +352,7 @@ function ImportCreate() {
                                             <th className=' w-[6.25rem]'>
                                                 ລະຫັດສິນຄ້າ
                                             </th>
-                                            <th width={350}>
+                                            <th width={300}>
                                                 ຊື່ສິນຄ້າ
                                             </th>
                                             <th width={50}>
@@ -372,13 +361,16 @@ function ImportCreate() {
                                             <th width={80}>
                                                 ຈຳນວນ
                                             </th>
-                                            <th width={80}>
+                                            <th width={110}>
                                                 ລາຄານຳເຂົ້າ
                                             </th>
-                                            <th width={120}>
+                                            <th width={110}>
                                                 ສ່ວນຫລຸດ
                                             </th>
-                                            <th width={100}>
+                                            <th width={110}>
+                                                ອ.ມ.ພ
+                                            </th>
+                                            <th width={110}>
                                                 ລວມ
                                             </th>
                                             <th width={60}>
@@ -395,7 +387,7 @@ function ImportCreate() {
                                                     return (
                                                         <tr key={idx} class="bg-white border-b ">
                                                             <td class=" text-center ">
-                                                                {i++}
+                                                                {i + 1}
                                                             </td>
                                                             <td class="text-xs">
                                                                 {row.barcode}
@@ -409,7 +401,7 @@ function ImportCreate() {
                                                                     style={{
                                                                         width: 120,
                                                                     }}
-                                                                    // onChange={handleChange}
+                                                                    onChange={(e) => handleChangeType(idx, e)}
                                                                     options={[
                                                                         {
                                                                             value: 'CASE/CRATE',
@@ -423,19 +415,30 @@ function ImportCreate() {
                                                                 />
                                                             </td>
                                                             <td class="">
-                                                                <Input autoComplete={false} size='middle'
+                                                                <Input
+                                                                    value={row.qty}
+                                                                    autoComplete={false} size='middle'
                                                                     onChange={(e) => handleInputQty(idx, e.target.value, row.value)} />
                                                             </td>
                                                             <td class="">
                                                                 <Input
+                                                                    value={row.price}
                                                                     autoComplete={false} size='middle'
                                                                     onChange={(e) => handleInputPrice(idx, e.target.value, row.value)}
                                                                 // onChange={(e) => console.log(e.target.value, row.value)}
                                                                 />
                                                             </td>
                                                             <td class="">
-                                                                <Input autoComplete={false} size='middle'
+                                                                <Input
+                                                                    value={row.discount}
+                                                                    autoComplete={false} size='middle'
                                                                     onChange={(e) => handleInputDis(idx, e.target.value, row.value)} />
+                                                            </td>
+                                                            <td class="">
+                                                                <Input
+                                                                    value={row.tax}
+                                                                    autoComplete={false} size='middle'
+                                                                    onChange={(e) => handleInputTax(idx, e.target.value, row.value)} />
                                                             </td>
                                                             <td class="">
                                                                 <Input
@@ -460,45 +463,38 @@ function ImportCreate() {
                             </div>
                             <div className='col-span-3 gap-5 mt-10'>
                                 <hr />
-                                <div className='grid grid-cols-4 gap-5'>
-                                    <div className='mt-4 flex justify-end items-center'>
-                                        <h5 className=''>ລວມມູນຄ່າ:</h5>
-                                        <div className='ml-4'>
-                                            <NumericFormat
-                                                value={totalAmountPrice()}
-                                                className='text-right font-medium'
-                                                autoComplete={false} size='middle'
-                                                customInput={Input} allowLeadingZeros thousandSeparator="," />
-                                        </div>
+                                <div className='grid grid-cols-4 gap-10'>
+                                    <div className='mt-4'>
+                                        <h5 className='mb-1 font-bold'>ລວມມູນຄ່າ:</h5>
+                                        <NumericFormat
+                                            value={totalAmountPrice()}
+                                            className='text-right font-medium'
+                                            autoComplete={false} size='middle'
+                                            customInput={Input} allowLeadingZeros thousandSeparator="," />
                                     </div>
-                                    <div className='mt-2 flex justify-end items-center'>
-                                        <h5 className=''>ສ່ວນຫລຸດລາຄາ:</h5>
-                                        <div className='ml-4'>
-                                            <NumericFormat
-                                                value={totalDiscountPrice()}
-                                                className='text-right font-medium'
-                                                autoComplete={false} size='middle'
-                                                customInput={Input} allowLeadingZeros thousandSeparator="," />
-                                        </div>
+                                    <div className='mt-4'>
+                                        <h5 className='mb-1 font-bold'>ສ່ວນຫລຸດລາຄາ:</h5>
+                                        <NumericFormat
+                                            value={totalDiscountPrice()}
+                                            className='text-right font-medium'
+                                            autoComplete={false} size='middle'
+                                            customInput={Input} allowLeadingZeros thousandSeparator="," />
                                     </div>
-                                    <div className='mt-2 flex justify-end items-center'>
-                                        <h5 className=''>ລວມ ອ.ມ.ພ:</h5>
-                                        <div className='ml-4'>
-                                            <Input
-                                                onChange={(e) => handleInputTax(e)}
-                                                className='text-right font-medium'
-                                                autoComplete={false} size='middle' />
-                                        </div>
+                                    <div className='mt-4'>
+                                        <h5 className='mb-1 font-bold'>ລວມ ອ.ມ.ພ:</h5>
+                                        <NumericFormat
+                                            value={totalTax()}
+                                            className='text-right font-medium'
+                                            autoComplete={false} size='middle'
+                                            customInput={Input} allowLeadingZeros thousandSeparator="," />
                                     </div>
-                                    <div className='mt-2 flex justify-end items-center'>
-                                        <h5 className='text-base font-bold'>ລວມມູນຄ່າທັງໝົດ:</h5>
-                                        <div className='ml-4'>
-                                            <NumericFormat
-                                                value={totalWithTax()}
-                                                className='text-right text-[#2563eb] font-medium'
-                                                autoComplete={false} size='middle' readOnly={true}
-                                                customInput={Input} allowLeadingZeros thousandSeparator="," suffix={' ກີບ'} />
-                                        </div>
+                                    <div className='mt-4'>
+                                        <h5 className='mb-1 font-bold'>ລວມມູນຄ່າທັງໝົດ:</h5>
+                                        <NumericFormat
+                                            value={totalPriceAll()}
+                                            className='text-right text-[#2563eb] font-medium'
+                                            autoComplete={false} size='middle' readOnly={true}
+                                            customInput={Input} allowLeadingZeros thousandSeparator="," suffix={' ກີບ'} />
                                     </div>
                                 </div>
                             </div>

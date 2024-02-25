@@ -1,0 +1,13 @@
+.myInputNum input {
+    text-align: right !important;
+    color: #fff !important;
+    font-size: 1rem !important;
+}
+
+.myInputNumTotal input {
+    text-align: right !important;
+    color: #fff !important;
+    font-size: 1.125rem !important;
+    font-weight: 600 !important;
+    letter-spacing: .6px;
+}
